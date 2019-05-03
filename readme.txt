@@ -1,3 +1,15 @@
+zws_test_order_logistics 表结构:
++-----------+-----------------------+------+-----+---------+----------------+
+| Field     | Type                  | Null | Key | Default | Extra          |
++-----------+-----------------------+------+-----+---------+----------------+
+| id        | mediumint(8) unsigned | NO   | PRI | NULL    | auto_increment |
+| order_id  | mediumint(8) unsigned | NO   | MUL | 0       |                |
+| goods_id  | mediumint(8) unsigned | NO   | MUL | 0       |                |
+| cn_log    | text                  | NO   |     | NULL    |                |
+| inter_log | text                  | NO   |     | NULL    |                |
+| de_log    | text                  | NO   |     | NULL    |                |
++-----------+-----------------------+------+-----+---------+----------------+
+
 ----
 逻辑操作
 ----

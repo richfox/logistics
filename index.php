@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 
 
@@ -11,6 +12,93 @@ define('DB_USER', "root");
 define('DB_PASS', "root");
 define('DB_PORT', '');
 
+define('CUSTOMER', '0439B34CF50E0CEE9C884D90E407A2DA');
+define('KEY', 'jGKCrWOG1586');
+
+// 60s*60min*24h , 每个包裹需要间隔24小时才再次调用API 查询信息
+define('TIME_LIMIT', 86400);
+
+/*
+* 定义结束状态的判定
+* 包括0在途中、1已揽收、2疑难、3已签收、4退签、5同城派送中、6退回、7转单等7个状态
+*/
+$finishStatus = array(1, 3, 4, 7);
+
+#######
+## API 调用
+########
+/**
+ * @param string $company 快递公司名称代码
+ * 
+ * @param Stirng $cnPacketId  快递公司单号
+ */
+
+function getDataFromKuaidi100($company, $cnPacketId){
+    $key = KEY;
+    $customer = CUSTOMER;
+
+
+    $param = array (
+		'com' => $company,			//快递公司编码
+		'num' => $cnPacketId,	//快递单号
+		'phone' => '',				//手机号
+		'from' => '',				//出发地城市
+		'to' => '',					//目的地城市
+		'resultv2' => '1'			//开启行政区域解析
+	);
+	
+	//请求参数
+    $post_data = array();
+    $post_data["customer"] = $customer;
+    $post_data["param"] = json_encode($param);
+    $sign = md5($post_data["param"].$key.$post_data["customer"]);
+    $post_data["sign"] = strtoupper($sign);
+	
+    $url = 'http://poll.kuaidi100.com/poll/query.do';	//实时查询请求地址
+    
+	$params = "";
+    foreach ($post_data as $k=>$v) {
+        $params .= "$k=".urlencode($v)."&";		//默认UTF-8编码格式
+    }
+    $post_data = substr($params, 0, -1);
+    //echo '请求参数<br/>'.$post_data;
+	
+	//发送post请求
+    $ch = curl_init();
+	curl_setopt($ch, CURLOPT_POST, 1);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+	$result = curl_exec($ch);
+	$data = str_replace("\"", '"', $result );
+    return $data = json_decode($data);
+}
+
+/**
+ * @return json 返回测试函数测试
+ */
+function getTestData($cnPacketId){
+
+    $json_string = file_get_contents('kuaidi100.json'); 
+    //$data = json_decode($json_string, true);  
+    //return array
+    return $json_string;
+}
+
+/**
+ * @param String $cnPacketId 根据单号返回多个相似度高的公司名称，但是不能保证准确
+ * 暂时没有使用借口
+ */
+
+function getTestCom($cnPacketId){
+    return "yuantong";
+}
+
+
+########
+##API 结束
+#####
 
 /**
  * 数据库连接
@@ -22,9 +110,7 @@ if (mysqli_connect_errno()){
 	exit();
 }
 
-?>
-
-
+$htmlOfHeader='
 <!DOCTYPE html>
 <html >
 <head>
@@ -39,95 +125,13 @@ if (mysqli_connect_errno()){
         <a href="?seite=home">订单情况查看</a>
         <a href="?seite=input">添加新物流订单</a>
     </div>
-
-<?php
-################
-##  页面控制 部分， 类似于 routes ---开始
-################
-
-/**
- * 给页面一个缺省值， 5.3版本只能使用 if
- */
-//$seite = $_GET['seite'] ?? "home";
-if(isset($_GET['seite'])){
-    $seite = $_GET['seite'];
-}else{
-    $seite = "home";;
-}
-
-switch($seite){
-    case "home":
-
-        echo "home";
-        
-        break;
-    case "input":
-        if(isset($_POST["submit_booking"])){
-
-            //var_dump($_POST);
-            //die();
-
-            if($_POST["logis_num"] == "logis_one"){
-
-                // 客人选择单件到就发的状况，考虑到是货到欧洲后才向客人收钱
-                // 那么这里处理的方式是，为每个国内订单 生成一个欧洲订单，有多个欧洲订单
-                //var_dump($_POST)
-
-                foreach($_POST["cn_packet_id"] as $cnPacketId){
-                    $orderId = getOrderId();
-                    $goodsId = getGoodsId();
-
-                    insertToLogisCn($connect, $goodsId, $cnPacketId);
-
-                    insertToOrderLogis($connect, $orderId, $goodsId);
-                       
-                }
-                                        
-            }elseif($_POST["logis_num"] == "logis_more"){
-                //如果客人选择到齐后再发货，那么就是所有商品生成一个欧洲订单
-                //只有一个欧洲订单
-                $orderId = getOrderId();
-                $goodsId = getGoodsId();
-
-                foreach($_POST["cn_packet_id"] as $cnPacketId){
-                 
-                    insertToLogisCn($connect, $goodsId, $cnPacketId);
-    
-                }
-
-                insertToOrderLogis($connect, $orderId, $goodsId);
-
-            }else{
-                ##redirect to 404
-                echo "error ";
-            }
-        
-
-        }else{
-            showInputStart();
-        }
-
-       
-       
-        break;
-}
-
-################
-##  页面控制 部分---结束
-################
-
-
-###############
-###  子页面显示部分 ---开始
-#################
-
-// 输入国内订单号，并生成物流订单号的初始页面
-function showInputStart(){
-    $inputToHtml= '
     <br>
     <br>
     <hr>
     <br>
+';
+
+$htmlOfInput = '
     <div class="input-form" align="center"> 
         <form action="" method="POST">
             <div>
@@ -151,335 +155,243 @@ function showInputStart(){
                 
         </form>
  
-    </div>     
-    ';
-    echo $inputToHtml;
-}
+    </div>        
+';
 
-###############
-###  子页面显示部分 ---结束
-#################
-
-
-
-##############
-## 获得数据 和 逻辑判断操作---开始
-#############
-/**
- *  将cn各个包裹目前的log数据，显示全部相关信息，组成一个新的 log信息，
- *  然后将所有信息，生成一个HMTL 文件存在 主表里面的logo
- * 
- * 
- * @param String $goods_id
- * 
- * @return JSON 所有国内包裹单的data数组
- */
-function getCnlogByGoodsid($goods_id){
-    
-    
-    $packetid_arr  = getCnpacketidByGoodsid($goods_id);
-
-    $info = array();
-    for($i = 0; $i <count($packetid_arr);$i++){
-        $cnPacketId = $packetid_arr[$i][0];
-
-        //拿到test_logisc_cn_log 表里面的 国内单号的 json数据
-        $json_string= getCnlogByCnpacketid($cnPacketId);
-
-        $data = json_decode($json_string, true);  
-
-        #####
-        #没有测试， 这里也可以考虑直接就是 JSON 数据组合
-        //数组合并，这里需要再测试一下，
-        $info = array_merge($info, $data);
-    }
-
-    //返回一个数组的 JSON 形式数据，便于存储
-    return json_encode($info);
-}
-
-
-
-
-
-
-
-/**
- * 取数据（快递100），目前看到的应该是一次API请求，只能返回一个包裹的数据
- * 这个方法
- * @param String $cnPacketId 国内订单号码
- * @param String ??货运公司的名称，是不是需要，不确定
- * @return Array 返回一个包裹的数据
- */
-function getKuaidi100ByPacketID($cnPacketId){
-   
-    //模拟数据处理
-    $json_string = file_get_contents('kuaidi100.json'); 
+$htmlOfOutput = '
+    <div class="output-form" align="center"> 
+        <form action="" method="POST">
+            <div>
+                <label for="goods_id"> goods_id </label>
+                <input type="text" name="goods_id" required>                
+            </div>
+            <br>
+            <div>
+                <input type="submit" name="submit_search" value="查询">
+            </div>
+                
+        </form>
  
-    //return array
-    return $data;
-}
+    </div>        
+';
 
-/**
- * 将一个或者多个数组数据组成一个总的 数据返回
- * 
- * @param Array 单个包裹的数据
- * @return Array 所有包裹的数据
- */
-function getCnlogByGoodsid($goodsId){
-
-    //获得$goods_id 下对应的 所有包裹ID，针对所有ID 做操作
-    $packetIdArr = getCnpacketidByGoodsid($goodsId);
-
-    $data = array();
-
-    //根据包裹ID 从kuaidi100取数据
-    foreach($packetIdArr as $key =>$packetId){
-        //根据包裹ID， 取出status（这个包裹是否状态结束，如果结束
-        //就不从api 取数据了）从数据库中取数据
-        $status = getStatusByPacketId($packetId);
-
-        $cnPacketLog = getCnlogByCnpacketid($packetId);
-        //目前设置 3 表示签收，可能情况，status 需要放到一个 array 里面
-        //完成的状态可能有多种
-        if($status != 3){
-            //结束，不再从API 取数据， 
-            $json_string = getKuaidi100ByPacketID($packetId);
-
-            compareJsonKuaidi100($json_string, $cnPacketLog);
-        }
-    }
-    
-    //根据包裹ID， 从数据库中取数据
-    //比较包裹ID数据是否有变动，如果有变动，就操作
-        // 操作-1 update 数据（也许根本就不需要这一步，
-        //还是需要存，如果客户很短时间内多次申请，最好是存
-        //调用接口都是用钱的）
-
-}
-
-/**
- * @param Array JSON 数据结构数组，生成一个 HTML String
- * @return String 带有HMTL TAG 的String
- */
-
-function outputToHtml($arr){
-
-}
-
-
-/**
- *  比较两个的md5 值，只比较，update方法放到别的地方去
- *  
- * @param JSON $json_string, 从快递100 取过来的，新的 JSON数据
- * 
- * @param JSON $cn_log, 旧的JSON
- * 
- * @return Boolean 
- * 
- */
-function compareJsonKuaidi100($json_string, $cn_log){
-    if(md5($json_string) !== md5($cn_log)){
-        //updateCnlog($json_string);
-        return false;
-    }else {
-        return true;
-    }
-}
-
-
-/**
- * 获取 快递100 里面的数据，进行逻辑判断
- * @param JSON  
- * 
- */
-function parseJsonKuaidi100($json_string){
-    /*
-    * state	快递单当前签收状态，包括0在途中、1已揽收、2疑难、3已签收、4退签、5同城派送中、6退回、7转单等7个状态
-    */
-    // 把JSON字符串强制转成PHP数组  
-    $data = json_decode($json_string1, true);
-
-}
-
-// order_id, goods_id 不清楚，只能自己随机产生，两个理论上是等同的
-function getOrderId(){
-    mt_srand((double) microtime() * 1000000);
-    return date('Ymd') . str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
-}
-
-function getGoodsId(){
-    return getOrderId();
-}
-
-function getCnParketId(){
-    return 'g43434';
-}
-##############
-## 获得数据 和 逻辑判断操作---结束
-##############
+$htmlOfFooter ='
+</body>
+</html>            
+';
 
 
 ########################### 
 ###  数据库操作----开始
 ###########
-
 /**
- *  返回status的值，用于判断此项目是否结束，zw_test_logis_cn_blog
-* @param mysqli_connect $connect
- * @param String $packet_id ，包裹号
- */
-function getStatusByPacketId($packet_id){
-
-    global $connect;
-    $sql = "SELECT status FROM zws_test_logis_cn_log WHERE $packet_id = '$cn_packet_id'";
-
-    $result= mysqli_query($connect, $sql);
-    return  mysqli_fetch_row($result);
-}
-
-
-/**
- *  从zw_test_logis_cn 表中查询，该订单下的全部国内订单号
- * @param mysqli_connect $connect
- * @param String $goods_id, 暂时全部按照字符串存储，实际中可能是数字，
- * 需要时直接转换即可
- * 
- * @return Array 返回所有对应的 国内单号数组
- */
-function getCnpacketidByGoodsid($goods_id){
-
-    global $connect;
-
-    $sql = "SELECT cn_packet_id FROM zws_test_logis_cn WHERE goods_id = '$goods_id'";
-
-    $result= mysqli_query($connect, $sql);
-    return  mysqli_fetch_all($result);
-}
-
-
-
-/**
- * test-logis-cn表 插入， 
- * 该表只有三个字段， id- 自动， cn_packet_id-国内包裹单号， goods_id--物流货品ID号
- * 
- * @param mysqli_connect $connect ， 数据库连接
- * 
- * @param String
+ * zw_test_logis_cn表
+ *
+ * @param int $goodsID, 物流订单
  * 
  * @param String $cnPacketId, 国内包裹单号
  * 
+ * @param json $cnLog, 取过来的数据直接以JSON格式存在表中
+ * 
+ * @param timestamp $cnTime
+ * 
+ * @param int $cnStatus，状态码，目前暂时以 0 ， 为开始， 1 为结束
+ * 
+ * @param String $cnCompany 公司代码
  */
-function insertToLogisCn($goodsId, $cnPacketId){
+function insertToCn($goodsId, $cnPacketId, $cnLog,  $cnStatus, $cnCompany ){
 
     global $connect;
 
-    $sql = "INSERT INTO zws_test_logis_cn (goods_id, cn_packet_id)
-            VALUES ('$goodsId', '$cnPacketId')
+    $sql = "INSERT INTO zws_test_logis_cn (goods_id, cn_packet_id, cn_log, cn_status, cn_company)
+            VALUES ('$goodsId', '$cnPacketId', '$cnLog', '$cnStatus', '$cnCompany')
             ";
 
     mysqli_query($connect, $sql);
 
     if($connect->errno){
         echo $connect->error;
+        die();
     }
-
+    echo "insert ok";
 }
 
 /**
- *  zws_test_order_logis 表插入
- *  zws_test_order_logis表， 几乎跟原有的 zws_test_order_logisitics一模一样
- *  区别只是 将order-id, good-id 暂时按照字符形式记录
+ * zws_test_logis_cn 根据goods id 查询获得全部相关数据
+ * 
+ * @param int $goodsId  物流商品号
+ * 
+ * @return Array 返回带有key 的数组，包含全部信息
  */
-function insertToOrderLogis($orderId, $goodsId){
+function getAllByGoodsid($goodsId){
     global $connect;
-
-    $sql = "INSERT INTO zws_test_order_logis (order_id, goods_id)
-             VALUES ('$orderId', '$goodsId')
-                ";
-    mysqli_query($connect, $sql);
-
-}
-
-
-/**
- * zws_test_logis_cn_log 查询
- * 这个表由于三个属性构成， id-自动数字； cn_packet_id- 字符串，国内包裹单号； cn_log 国内物流信息，数组根式
- * @param mysqli_connect $connect ， 数据库连接
- * 
- * @param String $cnPacketId, 国内包裹单号
- * 
- * @return Arrary 返回一个数据形式存储的，包裹物流log 记录
- * 
- */
-function getCnlogByCnpacketid($cnPacketId){
-
-    global $connect;
-    $sql = "SELECT cn_log FROM zws_test_logis_cn_log WHERE cn_packet_id = '$cnPacketId'";
+    $sql = "SELECT * FROM zws_test_logis_cn WHERE goods_id = '$goodsId'";
 
     $result= mysqli_query($connect, $sql);
-    $row = mysqli_fetch_assoc($result);
-    return $row["cn_log"];
+    $data = mysqli_fetch_all($result,  MYSQLI_ASSOC);
+    return $data;
 }
 
 /**
- * zws_test_logis_cn_log 插入
- * @param mysqli_connect $connect ， 数据库连接
+ * zw_test_logis_cn表
+ * @param String $cnPacketId 国内包裹号
  * 
- * @param String $cnPacketId, 国内包裹单号
+ * @param String $cnLog JSON数据
  * 
- * @param Array $cnLog， 快递100的JESON 数据 数组转换后，物流信息的Data 部分
- * 
+ * @param int $cnStatus ， 1代表结束， 0 代表未结束
  */
-
-function insertToCnLog($cnPacketId, $cnLog){
+function updateByPacketid($cnPacketId, $cnLog, $cnStatus){
 
     global $connect;
-    $sql = "INSERT INTO zws_test_logis_cn_log (cn_packet_id, cn_log)
-    VALUES ('$cnPacketId', '$cnLog')
-    ";
-
-    mysqli_query($connect, $sql);
-
-    if($connect->errno){
-    echo $connect->error;
-    }
-}
-
-
-/**
- * zws_test_logis_cn_log 更新操作
- * @param mysqli_connect $connect ， 数据库连接
- * 
- * @param String $cnPacketId, 国内包裹单号
- * 
- * @param Array $cnLog， 快递100的JESON 数据 数组转换后，物流信息的Data 部分发生变更，将新的写入log
- */
-function updateCnlog($cnPacketId, $cnLog){
-
-    global $connect;
-
-    $sql = "UPDATE zws_test_logis_cn_log 
-    SET cn_log ='$cnLog'
+    $sql = "UPDATE zws_test_logis_cn 
+    SET cn_log ='$cnLog', cn_status = '$cnStatus'
     WHERE cn_packet_id = $cnPacketId
     ";
-    $connect->query($sql);
+    mysqli_query($connect, $sql);
 }
 
 
-##########################
-## 数据库操作---结束
-#############
-?>
+ // order_id, goods_id 不清楚，只能自己随机产生，两个理论上是等同的
+ function getOrderId(){
+    return str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
+}
 
-    
-</body>
-</html>
+function getGoodsId(){
+    return getOrderId();
+}
 
-<?php
+
+
+########################### 
+###  数据库操作----结束
+###########
+
+
+
 /**
- * 关系 数据连接
+ * 给页面一个缺省值， 5.3版本只能使用 if
+ */
+//$seite = $_GET['seite'] ?? "home";
+if(isset($_GET['seite'])){
+    $seite = $_GET['seite'];
+}else{
+    $seite = "home";;
+}
+
+echo $htmlOfHeader;
+
+switch($seite){
+    case "home":
+        echo "65265";
+        echo $htmlOfOutput;
+        
+        if(isset($_POST["submit_search"])){
+           // var_dump($_POST);
+            $goodsId = $_POST["goods_id"];
+
+            //获得现在的信息
+            $datas = getAllByGoodsid($goodsId);
+            $currentTime = time();
+
+            //根据状态位，和时间决定，是不是调用 API，如果不需要调用，就返回现有数据，
+            // 如果需要，就调用调用api 返回数据，
+            // 返回数据后，进行比较，看看是不是一样，如果不一样就新数据 覆盖旧数据
+            //如果数据一样，那么查看是不是 时间 已经超过24小时，如果是， 将时间戳
+            foreach($datas as $data){
+                //var_dump($data);
+                $cnTime = strtotime($data["cn_time"]);
+
+                if(($data["cn_status"] == 0) && ($currentTime - $cnTime > TIME_LIMIT)) {
+                    
+                    //目前取测试数据， 真实应该使用下面取 API接口数据
+                    $json_string= getTestData($cnPacketId);
+                    //$json_string= getDataFromKuaidi100($company, $cnPacketId)
+             
+                    //JSON md5 比较，不等，表示有变化， 新数据 update 到表中
+                    //否则，什么都不做
+                    if(md5($json_string) != md5($data["cn_log"])){
+                        $data["cn_log"]= $json_string;
+
+                        $newStatus = json_decode($json_string, true)["state"]; 
+                        if(in_array($newStatus, $finishStatus)){
+                            $newStatus= 1;
+                        }else{
+                            $newStatus= 0;
+                        }
+
+                        updateByPacketid($data["cn_packet_id"], $json_string, $newStatus);
+                    }
+                }
+
+                //拼接 HTML 数据
+                $cnPackId= $data["cn_packet_id"];
+    
+                $out .= " <div>
+                            <h3>" .$cnPackId."</h3> 
+                        <ul> " ;
+                
+                $cnPackInfos = json_decode($data["cn_log"], true)["data"];
+                
+                foreach($cnPackInfos as $cnPackInfo){
+                    //var_dump($cnPackInfo);
+                    $out .= "<li>".$cnPackInfo["time"]." ".$cnPackInfo["context"]."</li>";
+                }
+                $out .="</ul> </div>";
+            }
+            //输入 out, 这里也可以输入 html string 到 一个指定地方
+            echo $out;
+            
+        }
+        break;
+
+    case "input":
+        echo $htmlOfInput;
+
+        if(isset($_POST["submit_booking"])){
+            if($_POST["logis_num"] == "logis_one"){
+                // 客人选择单件到就发的状况，考虑到是货到欧洲后才向客人收钱
+                // 那么这里处理的方式是，为每个国内订单 生成一个欧洲订单，有多个欧洲订单
+                //var_dump($_POST);
+                foreach($_POST["cn_packet_id"] as $cnPacketId){
+
+                    /**
+                     * 这里都是测试数据，真实数据 goodsid 从ecshop里面获得， 
+                     * JSON 和公司名 数据从快递100 获得
+                     */
+                    $orderId = getOrderId();
+                    $goodsId = getGoodsId();
+                    $cnLog = getTestData($cnPacketId);
+                    $cnCompany = getTestCom($cnPacketId);
+                    //var_dump($cnLog);
+                
+                    $cnStatus = 0;
+                    insertToCn($goodsId, $cnPacketId, $cnLog, $cnStatus, $cnCompany);
+                            
+                }
+            }elseif($_POST["logis_num"] == "logis_more"){
+                //如果客人选择到齐后再发货，那么就是所有商品生成一个欧洲订单
+                //只有一个欧洲订单
+                $orderId = getOrderId();
+                $goodsId = getGoodsId();
+
+                foreach($_POST["cn_packet_id"] as $cnPacketId){
+                    $cnLog = getTestData($cnPacketId);
+                    $cnCompany = getTestCom($cnPacketId);
+
+                    $cnStatus = 0;
+                    insertToCn($goodsId, $cnPacketId, $cnLog, $cnStatus, $cnCompany);
+                }
+            }
+        }
+        break;
+}
+
+
+echo $htmlOfFooter;
+/**
+ * 关闭数据连接
  */
 
 mysqli_close($connect);
-?>
+
+
