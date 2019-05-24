@@ -155,24 +155,24 @@ $htmlOfInput = '
                 
         </form>
  
-    </div>        
+    </div>
 ';
 
 $htmlOfOutput = '
     <div class="output-form" align="center"> 
         <form action="" method="POST">
             <div>
-                <label for="goods_id"> goods_id </label>
-                <input type="text" name="goods_id" required>                
+                <label for="order_id"> 订单号 </label>
+                <input type="text" name="order_id" required>                
             </div>
             <br>
             <div>
-                <input type="submit" name="submit_search" value="查询">
+                <input type="submit" name="submit_search" value="查询"/>
             </div>
                 
         </form>
  
-    </div>        
+    </div>
 ';
 
 $htmlOfFooter ='
