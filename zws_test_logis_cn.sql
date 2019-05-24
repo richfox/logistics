@@ -21,14 +21,16 @@ SET time_zone = "+00:00";
 --
 
 CREATE TABLE `zws_test_logis_cn` (
-  `id` mediumint(11) UNSIGNED NOT NULL,
+  `id` mediumint(8) UNSIGNED NOT NULL AUTO_INCREMENT,
   `cn_packet_id` varchar(50) NOT NULL DEFAULT '',
-  `goods_id` mediumint(8) UNSIGNED NOT NULL,
+  `goods_id` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
   `cn_log` text NOT NULL,
   `cn_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `cn_status` tinyint(2) NOT NULL,
-  `cn_company` varchar(50) NOT NULL DEFAULT ''
-) ENGINE=MyISAM DEFAULT CHARSET=utf8;
+  `cn_status` tinyint(2) NOT NULL DEFAULT '0',
+  `cn_company` varchar(50) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  INDEX(`goods_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
 
 --
 -- Dumping data for table `zws_test_logis_cn`
@@ -44,11 +46,7 @@ INSERT INTO `zws_test_logis_cn` (`id`, `cn_packet_id`, `goods_id`, `cn_log`, `cn
 -- Indexes for dumped tables
 --
 
---
--- Indexes for table `zws_test_logis_cn`
---
-ALTER TABLE `zws_test_logis_cn`
-  ADD PRIMARY KEY (`id`);
+
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -57,5 +55,3 @@ ALTER TABLE `zws_test_logis_cn`
 --
 -- AUTO_INCREMENT for table `zws_test_logis_cn`
 --
-ALTER TABLE `zws_test_logis_cn`
-  MODIFY `id` mediumint(11) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=25;
