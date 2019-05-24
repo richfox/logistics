@@ -9,7 +9,7 @@ session_start();
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'zhongw_test');
 define('DB_USER', "root");
-define('DB_PASS', "root");
+define('DB_PASS', "");
 define('DB_PORT', '');
 
 define('CUSTOMER', '0439B34CF50E0CEE9C884D90E407A2DA');
@@ -287,7 +287,7 @@ switch($seite){
         
         if(isset($_POST["submit_search"])){
            // var_dump($_POST);
-            $goodsId = $_POST["goods_id"];
+            $goodsId = $_POST["order_id"];
 
             //获得现在的信息
             $datas = getAllByGoodsid($goodsId);
