@@ -162,8 +162,8 @@ $htmlOfOutput = '
     <div class="output-form" align="center"> 
         <form action="" method="POST">
             <div>
-                <label for="order_id"> 订单号 </label>
-                <input type="text" name="order_id" required>                
+                <label for="order_sn"> 订单号 </label>
+                <input type="text" name="order_sn" required>                
             </div>
             <br>
             <div>
@@ -261,6 +261,86 @@ function getGoodsId(){
 }
 
 
+//从订单号orderSn找到物流商品Id
+function get_logis_goods_id($orderSn)
+{
+    $logisGoodsId = 0;
+
+    //ecs_test_order_info表根据订单号查询订单id
+    $orderId = 166;
+
+    //ecs_test_order_goods表根据订单id查询订单下所有商品id
+    $goodsIds = array(65, 3002, 4, 3590);
+
+    //有中欧铁路物流吗
+    if (in_array(3590,$goodsIds)) //3590表示铁路物流
+    {
+        $found = false;
+        for ($i=0; $i<count($goodsIds); $i++)
+        {
+            //ecs_test_goods表根据商品id查询分类id
+            $catId = 82;
+
+            if ($catId == 82) //82表示订购分类
+            {
+                $logisGoodsId = $goodsIds[$i];
+                $found = true;
+                break;
+            }
+        }
+
+        if ($found == false)
+        {
+            echo "没找到物流商品";
+        }
+    }
+    else
+    {
+        echo "没找到物流商品";
+    }
+
+    return $logisGoodsId;
+}
+
+
+//ecs_test_goods表根据物流商品Id得到物流商品描述
+function get_logis_goods_desc($goodsId)
+{
+    //测试数据
+    $logisGoodsDesc = '<div><zws-product>
+                    <p><font size="6">2019052052858</font></p>
+                    <p>&nbsp;</p>
+                    <div class="section" id="railway">
+                    <div class="title"><span>铁路</span></div>
+                    <div class="descrip">
+                    <p><span style="color:#330099">中通75149569879381</span></p>
+                    <p>《根源之美》 庄申</p>
+                    <p>《中国书法简明史》 高明一</p>
+                    <p>&nbsp;</p>
+                    <p><span style="color:#330099">京东快递运单号：VC53388875621</span></p>
+                    <p><img src="/images/upload/Image/20190521221829.jpg" alt="" width="680" /></p>
+                    <p>&nbsp;</p>
+                    </div>
+                    </div>
+                    <div class="section" id="airline">
+                    <div class="title"><span>空运</span></div>
+                    <div class="descrip">
+                    <p><span style="color:#330099">中通75144946047320</span></p>
+                    <p>幼小衔接阶梯教程&mdash;&mdash;看图说话</p>
+                    <p>&nbsp;</p>
+                    <p><span style="color:#330099">申通3707110314956</span></p>
+                    <p>真相只有一个3册</p>
+                    <p>&nbsp;</p>
+                    <p><span style="color:#330099">3707166824747</span></p>
+                    <p>DK图解数学+图解科学</p>
+                    <p>&nbsp;</p>
+                    </div>
+                    </div>
+                    </zws-product></div>';
+
+    return $logisGoodsDesc;
+}
+
 
 ########################### 
 ###  数据库操作----结束
@@ -287,7 +367,13 @@ switch($seite){
         
         if(isset($_POST["submit_search"])){
            // var_dump($_POST);
-            $goodsId = $_POST["order_id"];
+            $sn = $_POST["order_sn"];
+            $goodsId = get_logis_goods_id($sn);
+            $logisDesc = get_logis_goods_desc($goodsId);
+
+            //TODO
+            //解析logisDesc得到国内物流单号
+            //zws_test_logis_cn表：通过国内物流单号和goodsId查询国内段物流信息
 
             //获得现在的信息
             $datas = getAllByGoodsid($goodsId);
