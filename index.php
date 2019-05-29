@@ -17,6 +17,7 @@ define('KEY', 'jGKCrWOG1586');
 
 // 60s*60min*24h , 每个包裹需要间隔24小时才再次调用API 查询信息
 define('TIME_LIMIT', 86400);
+//define('TIME_LIMIT', 0);
 
 /*
 * 定义结束状态的判定
@@ -39,8 +40,8 @@ function getDataFromKuaidi100($company, $cnPacketId){
 
 
     $param = array (
-		'com' => $company,			//快递公司编码
-		'num' => $cnPacketId,	//快递单号
+        'com' => $company,			//快递公司编码
+        'num' => $cnPacketId,	//快递单号
 		'phone' => '',				//手机号
 		'from' => '',				//出发地城市
 		'to' => '',					//目的地城市
@@ -270,7 +271,7 @@ function get_logis_goods_id($orderSn)
     $orderId = 166;
 
     //ecs_test_order_goods表根据订单id查询订单下所有商品id
-    $goodsIds = array(65, 3002, 4, 3590);
+    $goodsIds = array(40147, 3002, 4, 3590);
 
     //有中欧铁路物流吗
     if (in_array(3590,$goodsIds)) //3590表示铁路物流
@@ -388,11 +389,11 @@ switch($seite){
                 $cnTime = strtotime($data["cn_time"]);
 
                 if(($data["cn_status"] == 0) && ($currentTime - $cnTime > TIME_LIMIT)) {
-                    
+
                     //目前取测试数据， 真实应该使用下面取 API接口数据
                     $json_string= getTestData($cnPacketId);
-                    //$json_string= getDataFromKuaidi100($company, $cnPacketId)
-             
+                    //$json_string= getDataFromKuaidi100("yunda", "3950055201640");
+            
                     //JSON md5 比较，不等，表示有变化， 新数据 update 到表中
                     //否则，什么都不做
                     if(md5($json_string) != md5($data["cn_log"])){
