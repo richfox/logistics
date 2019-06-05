@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Erstellungszeit: 05. Jun 2019 um 11:54
+-- Erstellungszeit: 05. Jun 2019 um 15:44
 -- Server Version: 5.6.14
 -- PHP-Version: 5.5.6
 
@@ -28,7 +28,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE IF NOT EXISTS `zws_test_logis_de` (
   `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
-  `de_packet_id` varchar(50) NOT NULL DEFAULT '',
+  `de_packet_sn` varchar(50) NOT NULL DEFAULT '',
   `railway_id` mediumint(8) unsigned NOT NULL,
   `de_log` text NOT NULL,
   `de_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `zws_test_logis_de` (
 -- Daten für Tabelle `zws_test_logis_de`
 --
 
-INSERT INTO `zws_test_logis_de` (`id`, `de_packet_id`, `railway_id`, `de_log`, `de_time`, `de_status`, `de_company`) VALUES
+INSERT INTO `zws_test_logis_de` (`id`, `de_packet_sn`, `railway_id`, `de_log`, `de_time`, `de_status`, `de_company`) VALUES
 (1, '1Z30YE216852356434', 1, '', '2019-06-05 09:27:43', 0, 'UPS'),
 (2, '1Z30YE216852937217', 1, '', '2019-06-05 09:32:16', 0, 'UPS'),
 (3, '1Z30YE216853460444', 1, '', '2019-06-05 09:32:16', 0, 'UPS'),
