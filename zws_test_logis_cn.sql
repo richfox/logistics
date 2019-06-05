@@ -1,57 +1,89 @@
 -- phpMyAdmin SQL Dump
--- version 4.8.5
--- https://www.phpmyadmin.net/
+-- version 4.0.9
+-- http://www.phpmyadmin.net
 --
--- Host: localhost:8889
--- Generation Time: May 07, 2019 at 01:49 AM
--- Server version: 5.7.25
--- PHP Version: 7.3.1
+-- Host: 127.0.0.1
+-- Erstellungszeit: 05. Jun 2019 um 15:40
+-- Server Version: 5.6.14
+-- PHP-Version: 5.5.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+
 --
--- Database: `zhongw_test`
+-- Datenbank: `zhongw_test`
 --
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `zws_test_logis_cn`
+-- Tabellenstruktur für Tabelle `zws_test_logis_cn`
 --
 
-CREATE TABLE `zws_test_logis_cn` (
-  `id` mediumint(8) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `cn_packet_id` varchar(50) NOT NULL DEFAULT '',
-  `goods_id` mediumint(8) UNSIGNED NOT NULL DEFAULT '0',
+CREATE TABLE IF NOT EXISTS `zws_test_logis_cn` (
+  `id` mediumint(8) unsigned NOT NULL AUTO_INCREMENT,
+  `cn_packet_sn` varchar(50) NOT NULL DEFAULT '',
+  `railway_id` mediumint(8) unsigned NOT NULL,
   `cn_log` text NOT NULL,
   `cn_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `cn_status` tinyint(2) NOT NULL DEFAULT '0',
   `cn_company` varchar(50) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
-  INDEX(`goods_id`)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 AUTO_INCREMENT=1;
+  KEY `railway_id` (`railway_id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=41 ;
 
 --
--- Dumping data for table `zws_test_logis_cn`
+-- Daten für Tabelle `zws_test_logis_cn`
 --
 
-INSERT INTO `zws_test_logis_cn` (`id`, `cn_packet_id`, `goods_id`, `cn_log`, `cn_time`, `cn_status`, `cn_company`) VALUES
-(17, '123', 64001, '{\n    \"message\":\"ok\",\n    \"state\":\"0\",\n    \"status\":\"200\",\n    \"condition\":\"F00\",\n    \"ischeck\":\"0\",\n    \"com\":\"yuantong\",\n    \"nu\":\"V030344422\",\n    \"data\":[\n    {\n      \"context\":\"上海分拨中心/装件入车扫描 \",\n      \"time\":\"2012-08-28 16:33:12\",\n      \"ftime\":\"2012-08-28 16:33:12\"\n    },\n    {\n      \"context\":\"上海分拨中心/下车扫描 \",\n      \"time\":\"2012-08-27 23:22:42\",\n      \"ftime\":\"2012-08-27 23:22:42\"\n    }]\n}', '2019-05-06 22:27:27', 0, 'yuantong'),
-(18, '124', 40147, '{\n    \"message\":\"ok\",\n    \"state\":\"0\",\n    \"status\":\"200\",\n    \"condition\":\"F00\",\n    \"ischeck\":\"0\",\n    \"com\":\"yuantong\",\n    \"nu\":\"V030344421\",\n    \"data\":[\n    {\n      \"context\":\"北京分拨中心/装件入车扫描 \",\n      \"time\":\"2012-01-28 16:33:19\",\n      \"ftime\":\"2012-01-28 16:33:19\"\n    },\n    {\n      \"context\":\"北京分拨中心/下车扫描 \",\n      \"time\":\"2012-01-27 23:22:42\",\n      \"ftime\":\"2012-01-27 23:22:42\"\n    }]\n}', '2019-05-06 20:20:30', 0, 'yuantong'),
-(19, '223', 65265, '{\n    \"message\":\"ok\",\n    \"state\":\"0\",\n    \"status\":\"200\",\n    \"condition\":\"F00\",\n    \"ischeck\":\"0\",\n    \"com\":\"yuantong\",\n    \"nu\":\"V030344421\",\n    \"data\":[\n    {\n      \"context\":\"北京分拨中心/装件入车扫描 \",\n      \"time\":\"2012-01-28 16:33:19\",\n      \"ftime\":\"2012-01-28 16:33:19\"\n    },\n    {\n      \"context\":\"北京分拨中心/下车扫描 \",\n      \"time\":\"2012-01-27 23:22:42\",\n      \"ftime\":\"2012-01-27 23:22:42\"\n    }]\n}', '2019-05-06 21:05:04', 0, 'yuantong'),
-(20, '224', 65265, '{\n    \"message\":\"ok\",\n    \"state\":\"0\",\n    \"status\":\"200\",\n    \"condition\":\"F00\",\n    \"ischeck\":\"0\",\n    \"com\":\"yuantong\",\n    \"nu\":\"V030344421\",\n    \"data\":[\n    {\n      \"context\":\"北京分拨中心/装件入车扫描 \",\n      \"time\":\"2012-01-28 16:33:19\",\n      \"ftime\":\"2012-01-28 16:33:19\"\n    },\n    {\n      \"context\":\"北京分拨中心/下车扫描 \",\n      \"time\":\"2012-01-27 23:22:42\",\n      \"ftime\":\"2012-01-27 23:22:42\"\n    }]\n}', '2019-05-06 21:05:04', 0, 'yuantong');
+INSERT INTO `zws_test_logis_cn` (`id`, `cn_packet_sn`, `railway_id`, `cn_log`, `cn_time`, `cn_status`, `cn_company`) VALUES
+(1, '75145301313545', 1, '', '2019-06-05 13:39:35', 0, ''),
+(2, '900087884718', 1, '', '2019-06-05 13:39:35', 0, ''),
+(3, '94661945900-1-1-306', 1, '', '2019-06-05 13:39:35', 0, ''),
+(4, '73112298909142', 1, '', '2019-06-05 13:39:35', 0, ''),
+(5, '3706530057761', 1, '', '2019-06-05 13:39:35', 0, ''),
+(6, '75144112315391', 1, '', '2019-06-05 13:39:35', 0, ''),
+(7, '37965130713', 1, '', '2019-06-05 13:39:35', 0, ''),
+(8, 'VA52834633714-1-1', 1, '', '2019-06-05 13:39:35', 0, ''),
+(9, '805398573050226555', 1, '', '2019-06-05 13:39:35', 0, ''),
+(10, '73105962553976', 1, '', '2019-06-05 13:39:35', 0, ''),
+(11, '7791535488', 1, '', '2019-06-05 13:39:35', 0, ''),
+(12, '37982936861', 1, '', '2019-06-05 13:39:35', 0, ''),
+(13, '37956411865', 1, '', '2019-06-05 13:39:35', 0, ''),
+(14, '37821180198', 1, '', '2019-06-05 13:39:35', 0, ''),
+(15, '3946461529749', 1, '', '2019-06-05 13:39:35', 0, ''),
+(16, 'JDX000019048165', 2, '', '2019-06-05 13:39:35', 0, ''),
+(17, '37974142199', 2, '', '2019-06-05 13:39:35', 0, ''),
+(18, '190511043127583109', 2, '', '2019-06-05 13:39:35', 0, ''),
+(19, '37982936861', 2, '', '2019-06-05 13:39:35', 0, ''),
+(20, '73112732094717', 2, '', '2019-06-05 13:39:35', 0, ''),
+(21, '805761224016519222', 2, '', '2019-06-05 13:39:35', 0, ''),
+(22, '805733153637732561', 2, '', '2019-06-05 13:39:35', 0, ''),
+(23, '75144363950334', 2, '', '2019-06-05 13:39:35', 0, ''),
+(24, '37821180198', 3, '', '2019-06-05 13:39:35', 0, ''),
+(25, '73112483273239', 3, '', '2019-06-05 13:39:35', 0, ''),
+(26, '75149569879381', 3, '', '2019-06-05 13:39:35', 0, ''),
+(27, '805891326865468717', 3, '', '2019-06-05 13:39:35', 0, ''),
+(28, '75148434764560', 3, '', '2019-06-05 13:39:35', 0, ''),
+(29, '75149032170606', 3, '', '2019-06-05 13:39:35', 0, ''),
+(30, '75148325818416', 3, '', '2019-06-05 13:39:35', 0, ''),
+(31, 'JDVC00135865022-1-1', 3, '', '2019-06-05 13:39:35', 0, ''),
+(32, '73113290098508', 3, '', '2019-06-05 13:39:35', 0, ''),
+(33, '75148736127828', 3, '', '2019-06-05 13:39:35', 0, ''),
+(34, '38022716388', 3, '', '2019-06-05 13:39:35', 0, ''),
+(35, '805876350175711242', 3, '', '2019-06-05 13:39:35', 0, ''),
+(36, '51657730002113', 3, '', '2019-06-05 13:39:35', 0, ''),
+(37, 'YT2000072951625', 3, '', '2019-06-05 13:39:35', 0, ''),
+(38, '73112982357174', 3, '', '2019-06-05 13:39:35', 0, ''),
+(39, '38040357340', 3, '', '2019-06-05 13:39:35', 0, ''),
+(40, '73113195337282', 3, '', '2019-06-05 13:39:35', 0, '');
 
---
--- Indexes for dumped tables
---
-
-
-
---
--- AUTO_INCREMENT for dumped tables
---
-
---
--- AUTO_INCREMENT for table `zws_test_logis_cn`
---
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
