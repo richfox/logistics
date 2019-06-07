@@ -374,7 +374,9 @@ switch($seite){
 
             //TODO
             //解析logisDesc得到国内物流单号
-            //zws_test_logis_cn表：通过国内物流单号和goodsId查询国内段物流信息
+            //zws_test_logis_cn表：通过国内物流单号查询国内段物流信息
+            //zws_test_railway_inter表：通过zws_test_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
+            //zws_test_logis_de表：通过外键railway_id查询德国段ups物流信息
 
             //获得现在的信息
             $datas = getAllByGoodsid($goodsId);
