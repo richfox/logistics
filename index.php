@@ -349,6 +349,27 @@ function get_logis_goods_desc($goodsId)
 
 
 
+function get_logis_cn_ids($logisDesc)
+{
+    $ids = array();
+
+    $dom = new DomDocument();
+    $dom->loadHTML($logisDesc);
+
+    $xpath = new DOMXpath($dom);
+    $elems = $xpath->query("//div[@id='railway']/div[@class='descrip']//span/text()");
+    if (!is_null($elems))
+    {
+        foreach ($elems as $elem)
+        {
+            $ids[] = $elem->textContent;
+        }
+    }
+
+    return $ids;
+}
+
+
 /**
  * 给页面一个缺省值， 5.3版本只能使用 if
  */
@@ -363,7 +384,7 @@ echo $htmlOfHeader;
 
 switch($seite){
     case "home":
-        echo "65265";
+        //echo "65265";
         echo $htmlOfOutput;
         
         if(isset($_POST["submit_search"])){
@@ -371,9 +392,13 @@ switch($seite){
             $sn = $_POST["order_sn"];
             $goodsId = get_logis_goods_id($sn);
             $logisDesc = get_logis_goods_desc($goodsId);
+            var_dump($logisDesc);
 
             //TODO
             //解析logisDesc得到国内物流单号
+            $cnIds = get_logis_cn_ids($logisDesc);
+            var_dump($cnIds);
+
             //zws_test_logis_cn表：通过国内物流单号查询国内段物流信息
             //zws_test_railway_inter表：通过zws_test_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
             //zws_test_logis_de表：通过外键railway_id查询德国段ups物流信息
