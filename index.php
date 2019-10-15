@@ -311,7 +311,7 @@ function get_logis_goods_desc($goodsId)
     $logisGoodsDesc = '<div><zws-product>
                     <p><font size="6">2019052052858</font></p>
                     <p>&nbsp;</p>
-                    <div class="section" id="railway">
+                    <div class="section" id="r">
                     <div class="title"><span>铁路</span></div>
                     <div class="descrip">
                     <p><span style="color:#330099">中通75149569879381</span></p>
@@ -351,18 +351,24 @@ function get_logis_goods_desc($goodsId)
 
 function get_logis_cn_ids($logisDesc)
 {
-    $ids = array();
+    $ids["s"] = [];
+    $ids["r"] = [];
+    $ids["a"] = [];
 
     $dom = new DomDocument();
     $dom->loadHTML($logisDesc);
-
     $xpath = new DOMXpath($dom);
-    $elems = $xpath->query("//div[@id='railway']/div[@class='descrip']//span/text()");
-    if (!is_null($elems))
+
+    $transports = ["s"=>"ship","r"=>"railway","a"=>"airline"];
+    foreach ($transports as $k=>$v)
     {
-        foreach ($elems as $elem)
+        $elems = $xpath->query("//div[@id='$k' or @id='$v']/div[@class='descrip']//span/text()");
+        if (!is_null($elems))
         {
-            $ids[] = $elem->textContent;
+            foreach ($elems as $elem)
+            {
+                $ids[$k][] = $elem->textContent;
+            }
         }
     }
 
@@ -394,7 +400,6 @@ switch($seite){
             $logisDesc = get_logis_goods_desc($goodsId);
             var_dump($logisDesc);
 
-            //TODO
             //解析logisDesc得到国内物流单号
             $cnIds = get_logis_cn_ids($logisDesc);
             var_dump($cnIds);
