@@ -25,6 +25,9 @@ define('TIME_LIMIT', 86400);
 */
 $finishStatus = array(1, 3, 4, 7);
 
+//物流形式
+$transports = ["s"=>"ship","r"=>"railway","a"=>"airline"];
+
 #######
 ## API 调用
 ########
@@ -314,11 +317,11 @@ function get_logis_goods_desc($goodsId)
                     <div class="section" id="r">
                     <div class="title"><span>铁路</span></div>
                     <div class="descrip">
-                    <p><span style="color:#330099">中通75149569879381</span></p>
+                    <p><span style="color:#330099">75149569879381</span></p>
                     <p>《根源之美》 庄申</p>
                     <p>《中国书法简明史》 高明一</p>
                     <p>&nbsp;</p>
-                    <p><span style="color:#330099">京东快递运单号：VC53388875621</span></p>
+                    <p><span style="color:#330099">805398573050226555</span></p>
                     <p><img src="/images/upload/Image/20190521221829.jpg" alt="" width="680" /></p>
                     <p>&nbsp;</p>
                     </div>
@@ -343,6 +346,79 @@ function get_logis_goods_desc($goodsId)
 }
 
 
+function get_logis_cn_logs($cnIds)
+{
+    $logs = [];
+
+    global $connect;
+    global $transports;
+    foreach ($transports as $k=>$v)
+    {
+        $logs[$k] = [];
+        if ($k == "r")
+        {
+            foreach ($cnIds[$k] as $id)
+            {
+                $sql = "SELECT * FROM zws_test_logis_cn WHERE cn_packet_sn = '$id'";
+                $result= mysqli_query($connect,$sql);
+                $logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+            }
+        }
+    }
+
+    return $logs;
+}
+
+
+function get_logis_inter_logs($cnLogs)
+{
+    $logs = [];
+
+    global $connect;
+    global $transports;
+    foreach ($transports as $k=>$v)
+    {
+        $logs[$k] = [];
+        if ($k == "r")
+        {
+            foreach ($cnLogs[$k] as $cnlog)
+            {
+                $id = $cnlog[0]["railway_id"];
+                $sql = "SELECT * FROM zws_test_railway_inter WHERE id = '$id'";
+                $result= mysqli_query($connect,$sql);
+                $logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+            }
+        }
+    }
+
+    return $logs;
+}
+
+function get_logis_de_logs($cnLogs)
+{
+    $logs = [];
+
+    global $connect;
+    global $transports;
+    foreach ($transports as $k=>$v)
+    {
+        $logs[$k] = [];
+        if ($k == "r")
+        {
+            foreach ($cnLogs[$k] as $cnlog)
+            {
+                $id = $cnlog[0]["railway_id"];
+                $sql = "SELECT * FROM zws_test_logis_de WHERE railway_id = '$id'";
+                $result= mysqli_query($connect,$sql);
+                $logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+            }
+        }
+    }
+
+    return $logs;
+}
+
+
 ########################### 
 ###  数据库操作----结束
 ###########
@@ -351,17 +427,16 @@ function get_logis_goods_desc($goodsId)
 
 function get_logis_cn_ids($logisDesc)
 {
-    $ids["s"] = [];
-    $ids["r"] = [];
-    $ids["a"] = [];
+    $ids = [];
 
     $dom = new DomDocument();
     $dom->loadHTML($logisDesc);
     $xpath = new DOMXpath($dom);
 
-    $transports = ["s"=>"ship","r"=>"railway","a"=>"airline"];
+    global $transports;
     foreach ($transports as $k=>$v)
     {
+        $ids[$k] = [];
         $elems = $xpath->query("//div[@id='$k' or @id='$v']/div[@class='descrip']//span/text()");
         if (!is_null($elems))
         {
@@ -374,6 +449,8 @@ function get_logis_cn_ids($logisDesc)
 
     return $ids;
 }
+
+
 
 
 /**
@@ -405,8 +482,19 @@ switch($seite){
             var_dump($cnIds);
 
             //zws_test_logis_cn表：通过国内物流单号查询国内段物流信息
+            echo "国内段物流信息";
+            $cnLogs = get_logis_cn_logs($cnIds);
+            var_dump($cnLogs);
+
             //zws_test_railway_inter表：通过zws_test_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
-            //zws_test_logis_de表：通过外键railway_id查询德国段ups物流信息
+            echo "国际段铁路物流信息";
+            $interLogs = get_logis_inter_logs($cnLogs);
+            var_dump($interLogs);
+
+            //zws_test_logis_de表：通过zws_test_logis_cn表外键railway_id查询德国段ups物流信息
+            echo "德国段ups物流信息";
+            $deLogs = get_logis_de_logs($cnLogs);
+            var_dump($deLogs);
 
             //获得现在的信息
             $datas = getAllByGoodsid($goodsId);
