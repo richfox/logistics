@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: 127.0.0.1
--- Erstellungszeit: 05. Jun 2019 um 15:40
+-- Erstellungszeit: 16. Okt 2019 um 15:23
 -- Server Version: 5.6.14
 -- PHP-Version: 5.5.6
 
@@ -32,11 +32,11 @@ CREATE TABLE IF NOT EXISTS `zws_test_logis_cn` (
   `railway_id` mediumint(8) unsigned NOT NULL,
   `cn_log` text NOT NULL,
   `cn_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `cn_status` tinyint(2) NOT NULL DEFAULT '0',
+  `cn_status` tinyint(2) NOT NULL DEFAULT '-1',
   `cn_company` varchar(50) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   KEY `railway_id` (`railway_id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=41 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=44 ;
 
 --
 -- Daten für Tabelle `zws_test_logis_cn`
@@ -50,8 +50,8 @@ INSERT INTO `zws_test_logis_cn` (`id`, `cn_packet_sn`, `railway_id`, `cn_log`, `
 (5, '3706530057761', 1, '', '2019-06-05 13:39:35', 0, ''),
 (6, '75144112315391', 1, '', '2019-06-05 13:39:35', 0, ''),
 (7, '37965130713', 1, '', '2019-06-05 13:39:35', 0, ''),
-(8, 'VA52834633714-1-1', 1, '', '2019-06-05 13:39:35', 0, ''),
-(9, '805398573050226555', 1, '', '2019-06-05 13:39:35', 0, ''),
+(8, 'VA52834633714-1-1', 1, '', '2019-10-16 13:08:35', 2, 't'),
+(9, '805398573050226555', 1, '', '2019-09-16 12:31:55', 0, 'yuantong'),
 (10, '73105962553976', 1, '', '2019-06-05 13:39:35', 0, ''),
 (11, '7791535488', 1, '', '2019-06-05 13:39:35', 0, ''),
 (12, '37982936861', 1, '', '2019-06-05 13:39:35', 0, ''),
@@ -68,7 +68,7 @@ INSERT INTO `zws_test_logis_cn` (`id`, `cn_packet_sn`, `railway_id`, `cn_log`, `
 (23, '75144363950334', 2, '', '2019-06-05 13:39:35', 0, ''),
 (24, '37821180198', 3, '', '2019-06-05 13:39:35', 0, ''),
 (25, '73112483273239', 3, '', '2019-06-05 13:39:35', 0, ''),
-(26, '75149569879381', 3, '', '2019-06-05 13:39:35', 0, ''),
+(26, '75149569879381', 3, '', '2019-10-16 12:31:12', 0, 'zhongtong'),
 (27, '805891326865468717', 3, '', '2019-06-05 13:39:35', 0, ''),
 (28, '75148434764560', 3, '', '2019-06-05 13:39:35', 0, ''),
 (29, '75149032170606', 3, '', '2019-06-05 13:39:35', 0, ''),

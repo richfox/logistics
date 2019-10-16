@@ -21,9 +21,10 @@ define('TIME_LIMIT', 86400);
 
 /*
 * 定义结束状态的判定
-* 包括0在途中、1已揽收、2疑难、3已签收、4退签、5同城派送中、6退回、7转单等7个状态
+* 包括0在途，1揽收，2疑难，3签收，4退签，5派件，6退回，7转投 等8个状态
+* 新增两个状态：初始状态为-1, 手动定义终结状态为99
 */
-$finishStatus = array(1, 3, 4, 7);
+$finishStatus = array(1, 3, 4, 7, 99);
 
 //物流形式
 $transports = ["s"=>"ship","r"=>"railway","a"=>"airline"];
@@ -65,7 +66,7 @@ function getDataFromKuaidi100($company, $cnPacketId){
         $params .= "$k=".urlencode($v)."&";		//默认UTF-8编码格式
     }
     $post_data = substr($params, 0, -1);
-    //echo '请求参数<br/>'.$post_data;
+    echo '请求参数<br/>'.$post_data;
 	
 	//发送post请求
     $ch = curl_init();
@@ -76,7 +77,12 @@ function getDataFromKuaidi100($company, $cnPacketId){
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	$result = curl_exec($ch);
 	$data = str_replace("\"", '"', $result );
-    return $data = json_decode($data);
+    //$data = json_decode($data);
+
+    //echo '<br/><br/>返回数据<br/>';
+    //var_dump($data);
+
+    return $data;
 }
 
 /**
@@ -85,8 +91,9 @@ function getDataFromKuaidi100($company, $cnPacketId){
 function getTestData($cnPacketId){
 
     $json_string = file_get_contents('kuaidi100.json'); 
-    //$data = json_decode($json_string, true);  
-    //return array
+    //$data = json_decode($json_string);
+    //var_dump($data);
+
     return $json_string;
 }
 
@@ -241,17 +248,12 @@ function getAllByGoodsid($goodsId){
  * @param String $cnPacketId 国内包裹号
  * 
  * @param String $cnLog JSON数据
- * 
- * @param int $cnStatus ， 1代表结束， 0 代表未结束
  */
-function updateByPacketid($cnPacketId, $cnLog, $cnStatus){
-
+function updateByPacketid($cnPacketId, $cnLog, $cnStatus)
+{
     global $connect;
-    $sql = "UPDATE zws_test_logis_cn 
-    SET cn_log ='$cnLog', cn_status = '$cnStatus'
-    WHERE cn_packet_id = $cnPacketId
-    ";
-    mysqli_query($connect, $sql);
+    $sql = "UPDATE zws_test_logis_cn SET cn_log ='$cnLog', cn_status = '$cnStatus' WHERE cn_packet_sn = $cnPacketId";
+    $result = mysqli_query($connect, $sql);
 }
 
 
@@ -467,7 +469,6 @@ echo $htmlOfHeader;
 
 switch($seite){
     case "home":
-        //echo "65265";
         echo $htmlOfOutput;
         
         if(isset($_POST["submit_search"])){
@@ -477,6 +478,8 @@ switch($seite){
             $logisDesc = get_logis_goods_desc($goodsId);
             var_dump($logisDesc);
 
+            $currentTime = time();
+
             //解析logisDesc得到国内物流单号
             $cnIds = get_logis_cn_ids($logisDesc);
             var_dump($cnIds);
@@ -485,6 +488,54 @@ switch($seite){
             echo "国内段物流信息";
             $cnLogs = get_logis_cn_logs($cnIds);
             var_dump($cnLogs);
+            foreach ($cnLogs as $k=>$v)
+            {
+                //目前只支持铁路物流查询
+                if ($k == "r")
+                {
+                    foreach ($v as $railway)
+                    {
+                        $time = strtotime($railway[0]["cn_time"]);
+                        if ($currentTime - $time > TIME_LIMIT) //查询间隔时间已经超过24小时
+                        {
+                            $state = $railway[0]["cn_status"];
+                            $log = $railway[0]["cn_log"];
+                            $company = $railway[0]["cn_company"];
+                            $sn = $railway[0]["cn_packet_sn"];
+                            if ($state == -1) //初始状态
+                            {
+                                $res= getDataFromKuaidi100($company,$sn);
+                                //$res= getTestData($sn);
+                                $data = json_decode($res,true);
+                                var_dump($data);
+
+                                updateByPacketid($sn,$res,$data["state"]);
+                            }
+                            elseif (in_array($state,$finishStatus)) //终结状态
+                            {}
+                            else
+                            {
+                                $res= getDataFromKuaidi100($company,$sn);
+                                //$res= getTestData($sn);
+                                $data = json_decode($res,true);
+                                var_dump($data);
+
+                                if ($state != $data["state"]) //状态有变化
+                                {
+                                    updateByPacketid($sn,$res,$data["state"]);
+                                }
+                                else
+                                {
+                                    if ($log != $res) //JSON比较数据有变化
+                                    {
+                                        updateByPacketid($sn,$res,$state);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
             //zws_test_railway_inter表：通过zws_test_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
             echo "国际段铁路物流信息";
@@ -498,7 +549,7 @@ switch($seite){
 
             //获得现在的信息
             $datas = getAllByGoodsid($goodsId);
-            $currentTime = time();
+            //$currentTime = time();
 
             //根据状态位，和时间决定，是不是调用 API，如果不需要调用，就返回现有数据，
             // 如果需要，就调用调用api 返回数据，
