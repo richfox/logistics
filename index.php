@@ -501,7 +501,7 @@ switch($seite){
             //zws_test_logis_cn表：通过国内物流单号查询国内段物流信息
             //echo "国内段物流信息";
             $cnLogs = get_logis_cn_logs($cnIds);
-            //var_dump($cnLogs);
+            var_dump($cnLogs);
             foreach ($cnLogs as $k=>$v)
             {
                 //目前只支持铁路物流查询
@@ -514,7 +514,7 @@ switch($seite){
                         $log = $railway[0]["cn_log"];
                         $company = $railway[0]["cn_company"];
                         $sn = $railway[0]["cn_packet_sn"];
-                        $out .= $sn;
+                        $out .= "<p>".$sn."</p>";
 
                         $time = strtotime($railway[0]["cn_time"]);
                         if ($currentTime - $time > TIME_LIMIT) //查询间隔时间已经超过24小时
@@ -525,7 +525,7 @@ switch($seite){
                                 $res= getDataFromKuaidi100($company,$sn);
                                 //$res= getTestData($sn);
                                 $data = json_decode($res,true);
-                                var_dump($data);
+                                //var_dump($data);
 
                                 updateByPacketid($sn,$res,$data["state"]);
                                 $out .= build_cn_log_html(json_decode($res,true)["data"]);
@@ -539,7 +539,7 @@ switch($seite){
                                 $res= getDataFromKuaidi100($company,$sn);
                                 //$res= getTestData($sn);
                                 $data = json_decode($res,true);
-                                var_dump($data);
+                                //var_dump($data);
 
                                 if ($state != $data["state"]) //状态有变化
                                 {
@@ -569,8 +569,6 @@ switch($seite){
                 }
             }
 
-            echo $out .= "<br>";
-
             //zws_test_railway_inter表：通过zws_test_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
             //echo "国际段铁路物流信息";
             $interLogs = get_logis_inter_logs($cnLogs);
@@ -584,6 +582,8 @@ switch($seite){
                     foreach ($v as $railway)
                     {
                         $log = $railway[0]["inter_log"];
+                        $sn = $railway[0]["railway_sn"];
+                        $out .= "<p>".$sn."</p>";
                         $out .= "<li>".$log."</li>";
                     }
                     $out .= "</ul></div>";
