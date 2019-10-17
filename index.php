@@ -454,12 +454,12 @@ function get_logis_cn_ids($logisDesc)
     return $ids;
 }
 
-function build_cn_log_html($packets)
+function build_cn_log_html($infos)
 {
     $out = "";
-    foreach($packets as $packet)
+    foreach($infos as $info)
     {
-        $out .= "<li>".$packet["ftime"]." ".$packet["context"]."</li>";
+        $out .= "<li>".$info["ftime"]." ".$info["context"]."</li>";
     }
     return $out;
 }
@@ -496,24 +496,25 @@ switch($seite){
             $cnIds = get_logis_cn_ids($logisDesc);
             var_dump($cnIds);
 
+            $out = ""; //查询结果html输出
+
             //zws_test_logis_cn表：通过国内物流单号查询国内段物流信息
-            echo "国内段物流信息";
+            //echo "国内段物流信息";
             $cnLogs = get_logis_cn_logs($cnIds);
             //var_dump($cnLogs);
-            $cnout = "";
             foreach ($cnLogs as $k=>$v)
             {
                 //目前只支持铁路物流查询
                 if ($k == "r")
                 {
-                    $cnout .= "<div><h3>铁路</h3><ul>";
+                    $out = "<div><h3>国内段物流信息</h3><ul>";
                     foreach ($v as $railway)
                     {
                         $state = $railway[0]["cn_status"];
                         $log = $railway[0]["cn_log"];
                         $company = $railway[0]["cn_company"];
                         $sn = $railway[0]["cn_packet_sn"];
-                        $cnout .= $sn;
+                        $out .= $sn;
 
                         $time = strtotime($railway[0]["cn_time"]);
                         if ($currentTime - $time > TIME_LIMIT) //查询间隔时间已经超过24小时
@@ -527,11 +528,11 @@ switch($seite){
                                 var_dump($data);
 
                                 updateByPacketid($sn,$res,$data["state"]);
-                                $cnout .= build_cn_log_html(json_decode($res,true)["data"]);
+                                $out .= build_cn_log_html(json_decode($res,true)["data"]);
                             }
                             elseif (in_array($state,$finishStatus)) //终结状态
                             {
-                                $cnout .= build_cn_log_html(json_decode($log,true)["data"]);
+                                $out .= build_cn_log_html(json_decode($log,true)["data"]);
                             }
                             else
                             {
@@ -543,36 +544,53 @@ switch($seite){
                                 if ($state != $data["state"]) //状态有变化
                                 {
                                     updateByPacketid($sn,$res,$data["state"]);
-                                    $cnout .= build_cn_log_html(json_decode($res,true)["data"]);
+                                    $out .= build_cn_log_html(json_decode($res,true)["data"]);
                                 }
                                 else
                                 {
                                     if ($log != $res) //JSON比较数据有变化
                                     {
                                         updateByPacketid($sn,$res,$state);
-                                        $cnout .= build_cn_log_html(json_decode($res,true)["data"]);
+                                        $out .= build_cn_log_html(json_decode($res,true)["data"]);
                                     }
                                     else
                                     {
-                                        $cnout .= build_cn_log_html(json_decode($log,true)["data"]);
+                                        $out .= build_cn_log_html(json_decode($log,true)["data"]);
                                     }
                                 }
                             }
                         }
                         else
                         {
-                            $cnout .= build_cn_log_html(json_decode($log,true)["data"]);
+                            $out .= build_cn_log_html(json_decode($log,true)["data"]);
                         }
                     }
-                    $cnout .="</ul></div>";
+                    $out .= "</ul></div>";
                 }
             }
-            echo $cnout;
+
+            echo $out .= "<br>";
 
             //zws_test_railway_inter表：通过zws_test_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
-            echo "国际段铁路物流信息";
+            //echo "国际段铁路物流信息";
             $interLogs = get_logis_inter_logs($cnLogs);
             var_dump($interLogs);
+            foreach ($interLogs as $k=>$v)
+            {
+                //目前只支持铁路物流查询
+                if ($k == "r")
+                {
+                    $out .= "<div><h3>国际段铁路物流信息</h3><ul>";
+                    foreach ($v as $railway)
+                    {
+                        $log = $railway[0]["inter_log"];
+                        $out .= "<li>".$log."</li>";
+                    }
+                    $out .= "</ul></div>";
+                }
+            }
+
+            echo $out .= "<br>";
 
             //zws_test_logis_de表：通过zws_test_logis_cn表外键railway_id查询德国段ups物流信息
             echo "德国段ups物流信息";
