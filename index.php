@@ -20,11 +20,11 @@ define('TIME_LIMIT', 86400);
 //define('TIME_LIMIT', 0);
 
 /*
-* 定义结束状态的判定
-* 包括0在途，1揽收，2疑难，3签收，4退签，5派件，6退回，7转投 等8个状态
+* 快递单当前状态，包括0在途，1揽收，2疑难，3签收，4退签，5派件，6退回，7转投 等8个状态
 * 新增两个状态：初始状态为-1, 手动定义终结状态为99
+* 定义结束状态的判定
 */
-$finishStatus = array(1, 3, 4, 7, 99);
+$finishStatus = array(3, 4, 7, 99);
 
 //物流形式
 $transports = ["s"=>"ship","r"=>"railway","a"=>"airline"];
@@ -248,11 +248,13 @@ function getAllByGoodsid($goodsId){
  * @param String $cnPacketId 国内包裹号
  * 
  * @param String $cnLog JSON数据
+ * 
+ * @param int $cnStatus 物流状态
  */
 function updateByPacketid($cnPacketId, $cnLog, $cnStatus)
 {
     global $connect;
-    $sql = "UPDATE zws_test_logis_cn SET cn_log ='$cnLog', cn_status = '$cnStatus' WHERE cn_packet_sn = $cnPacketId";
+    $sql = "UPDATE zws_test_logis_cn SET cn_log ='$cnLog', cn_status = '$cnStatus' WHERE cn_packet_sn = '$cnPacketId'";
     $result = mysqli_query($connect, $sql);
 }
 
@@ -452,6 +454,16 @@ function get_logis_cn_ids($logisDesc)
     return $ids;
 }
 
+function build_cn_log_html($packets)
+{
+    $out = "";
+    foreach($packets as $packet)
+    {
+        $out .= "<li>".$packet["ftime"]." ".$packet["context"]."</li>";
+    }
+    return $out;
+}
+
 
 
 
@@ -487,21 +499,26 @@ switch($seite){
             //zws_test_logis_cn表：通过国内物流单号查询国内段物流信息
             echo "国内段物流信息";
             $cnLogs = get_logis_cn_logs($cnIds);
-            var_dump($cnLogs);
+            //var_dump($cnLogs);
+            $cnout = "";
             foreach ($cnLogs as $k=>$v)
             {
                 //目前只支持铁路物流查询
                 if ($k == "r")
                 {
+                    $cnout .= "<div><h3>铁路</h3><ul>";
                     foreach ($v as $railway)
                     {
+                        $state = $railway[0]["cn_status"];
+                        $log = $railway[0]["cn_log"];
+                        $company = $railway[0]["cn_company"];
+                        $sn = $railway[0]["cn_packet_sn"];
+                        $cnout .= $sn;
+
                         $time = strtotime($railway[0]["cn_time"]);
                         if ($currentTime - $time > TIME_LIMIT) //查询间隔时间已经超过24小时
                         {
-                            $state = $railway[0]["cn_status"];
-                            $log = $railway[0]["cn_log"];
-                            $company = $railway[0]["cn_company"];
-                            $sn = $railway[0]["cn_packet_sn"];
+                            $res = "";
                             if ($state == -1) //初始状态
                             {
                                 $res= getDataFromKuaidi100($company,$sn);
@@ -510,9 +527,12 @@ switch($seite){
                                 var_dump($data);
 
                                 updateByPacketid($sn,$res,$data["state"]);
+                                $cnout .= build_cn_log_html(json_decode($res,true)["data"]);
                             }
                             elseif (in_array($state,$finishStatus)) //终结状态
-                            {}
+                            {
+                                $cnout .= build_cn_log_html(json_decode($log,true)["data"]);
+                            }
                             else
                             {
                                 $res= getDataFromKuaidi100($company,$sn);
@@ -523,19 +543,31 @@ switch($seite){
                                 if ($state != $data["state"]) //状态有变化
                                 {
                                     updateByPacketid($sn,$res,$data["state"]);
+                                    $cnout .= build_cn_log_html(json_decode($res,true)["data"]);
                                 }
                                 else
                                 {
                                     if ($log != $res) //JSON比较数据有变化
                                     {
                                         updateByPacketid($sn,$res,$state);
+                                        $cnout .= build_cn_log_html(json_decode($res,true)["data"]);
+                                    }
+                                    else
+                                    {
+                                        $cnout .= build_cn_log_html(json_decode($log,true)["data"]);
                                     }
                                 }
                             }
                         }
+                        else
+                        {
+                            $cnout .= build_cn_log_html(json_decode($log,true)["data"]);
+                        }
                     }
+                    $cnout .="</ul></div>";
                 }
             }
+            echo $cnout;
 
             //zws_test_railway_inter表：通过zws_test_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
             echo "国际段铁路物流信息";
@@ -596,9 +628,6 @@ switch($seite){
                 }
                 $out .="</ul> </div>";
             }
-            //输入 out, 这里也可以输入 html string 到 一个指定地方
-            echo $out;
-            
         }
         break;
 
