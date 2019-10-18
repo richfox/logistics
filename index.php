@@ -28,6 +28,7 @@ $finishStatus = array(3, 4, 7, 99);
 
 //物流形式
 $transports = ["s"=>"ship","r"=>"railway","a"=>"airline"];
+$logisAreas = ["c"=>"cn","i"=>"inter","d"=>"de"];
 
 #######
 ## API 调用
@@ -66,7 +67,7 @@ function getDataFromKuaidi100($company, $cnPacketId){
         $params .= "$k=".urlencode($v)."&";		//默认UTF-8编码格式
     }
     $post_data = substr($params, 0, -1);
-    echo '请求参数<br/>'.$post_data;
+    //echo '请求参数<br/>'.$post_data;
 	
 	//发送post请求
     $ch = curl_init();
@@ -258,6 +259,38 @@ function updateByPacketid($cnPacketId, $cnLog, $cnStatus)
     $result = mysqli_query($connect, $sql);
 }
 
+/**
+ * zw_test_logis_表
+ * @param array $area 物流段
+ * 
+ * @param String $sn 国内包裹号
+ * 
+ * @param String $log JSON数据
+ * 
+ * @param int $status 物流状态
+ */
+function update_by_packetid($area,$sn,$log,$status)
+{
+    global $connect;
+    global $logisAreas;
+
+    $tablename = "zws_test_logis_";
+    $fieldnames = ["_log","_status","_packet_sn"];
+    foreach ($logisAreas as $k=>$v)
+    {
+        if (in_array($area,[$k,$v]))
+        {
+            $tablename .= $v;
+            $flog = $v.$fieldnames[0];
+            $fstatus = $v.$fieldnames[1];
+            $fsn = $v.$fieldnames[2];
+            $sql = "UPDATE ".$tablename." SET ".$flog." ='$log',".$fstatus." = '$status' WHERE ".$fsn." = '$sn'";
+            $result = mysqli_query($connect, $sql);
+
+            break;
+        }
+    }
+}
 
  // order_id, goods_id 不清楚，只能自己随机产生，两个理论上是等同的
  function getOrderId(){
@@ -496,7 +529,7 @@ switch($seite){
             $cnIds = get_logis_cn_ids($logisDesc);
             var_dump($cnIds);
 
-            $out = ""; //查询结果html输出
+            $out = "<zws>"; //查询结果html输出
 
             //zws_test_logis_cn表：通过国内物流单号查询国内段物流信息
             //echo "国内段物流信息";
@@ -507,7 +540,7 @@ switch($seite){
                 //目前只支持铁路物流查询
                 if ($k == "r")
                 {
-                    $out = "<div><h3>国内段物流信息</h3><ul>";
+                    $out .= "<div><h3>国内段物流信息</h3><ul>";
                     foreach ($v as $railway)
                     {
                         $state = $railway[0]["cn_status"];
@@ -590,12 +623,84 @@ switch($seite){
                 }
             }
 
-            echo $out .= "<br>";
-
             //zws_test_logis_de表：通过zws_test_logis_cn表外键railway_id查询德国段ups物流信息
-            echo "德国段ups物流信息";
+            //echo "德国段物流信息";
             $deLogs = get_logis_de_logs($cnLogs);
             var_dump($deLogs);
+            foreach ($deLogs as $k=>$v)
+            {
+                //目前只支持铁路物流查询
+                if ($k == "r")
+                {
+                    $out .= "<div>";
+                    $out .= "<h3>德国段物流信息</h3>";
+                    foreach ($v as $railway)
+                    {
+                        foreach ($railway as $r)
+                        {
+                            $state = $r["de_status"];
+                            $log = $r["de_log"];
+                            $company = $r["de_company"];
+                            $sn = $r["de_packet_sn"];
+                            $out .= "<p>".$sn."</p>";
+                            $out .= "<ul>";
+
+                            $time = strtotime($r["de_time"]);
+                            if ($currentTime - $time > TIME_LIMIT) //查询间隔时间已经超过24小时
+                            {
+                                $res = "";
+                                if ($state == -1) //初始状态
+                                {
+                                    $res= getDataFromKuaidi100($company,$sn);
+                                    //$res= getTestData($sn);
+                                    $data = json_decode($res,true);
+                                    //var_dump($data);
+
+                                    update_by_packetid("d",$sn,$res,$data["state"]);
+                                    $out .= build_cn_log_html(json_decode($res,true)["data"]);
+                                }
+                                elseif (in_array($state,$finishStatus)) //终结状态
+                                {
+                                    $out .= build_cn_log_html(json_decode($log,true)["data"]);
+                                }
+                                else
+                                {
+                                    $res= getDataFromKuaidi100($company,$sn);
+                                    //$res= getTestData($sn);
+                                    $data = json_decode($res,true);
+                                    //var_dump($data);
+
+                                    if ($state != $data["state"]) //状态有变化
+                                    {
+                                        update_by_packetid("d",$sn,$res,$data["state"]);
+                                        $out .= build_cn_log_html(json_decode($res,true)["data"]);
+                                    }
+                                    else
+                                    {
+                                        if ($log != $res) //JSON比较数据有变化
+                                        {
+                                            update_by_packetid("d",$sn,$res,$state);
+                                            $out .= build_cn_log_html(json_decode($res,true)["data"]);
+                                        }
+                                        else
+                                        {
+                                            $out .= build_cn_log_html(json_decode($log,true)["data"]);
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                $out .= build_cn_log_html(json_decode($log,true)["data"]);
+                            }
+                            $out .= "</ul>";
+                        }
+                    }
+                    $out .= "</div>";
+                }
+            }
+
+            echo $out .= "</zws>";
 
             //获得现在的信息
             $datas = getAllByGoodsid($goodsId);
