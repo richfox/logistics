@@ -560,7 +560,7 @@ switch($seite){
                                 $data = json_decode($res,true);
                                 //var_dump($data);
 
-                                updateByPacketid($sn,$res,$data["state"]);
+                                update_by_packetid("c",$sn,$res,$data["state"]);
                                 $out .= build_cn_log_html(json_decode($res,true)["data"]);
                             }
                             elseif (in_array($state,$finishStatus)) //终结状态
@@ -576,14 +576,14 @@ switch($seite){
 
                                 if ($state != $data["state"]) //状态有变化
                                 {
-                                    updateByPacketid($sn,$res,$data["state"]);
+                                    update_by_packetid("c",$sn,$res,$data["state"]);
                                     $out .= build_cn_log_html(json_decode($res,true)["data"]);
                                 }
                                 else
                                 {
                                     if ($log != $res) //JSON比较数据有变化
                                     {
-                                        updateByPacketid($sn,$res,$state);
+                                        update_by_packetid("c",$sn,$res,$state);
                                         $out .= build_cn_log_html(json_decode($res,true)["data"]);
                                     }
                                     else
