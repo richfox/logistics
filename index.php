@@ -292,6 +292,83 @@ function update_by_packetid($area,$sn,$log,$status)
     }
 }
 
+function get_logis_html($area,$record)
+{
+    $out = "";
+    $currentTime = time();
+    global $logisAreas;
+
+    $fieldnames = ["_status","_log","_company","_packet_sn","_time"];
+    foreach ($logisAreas as $k=>$v)
+    {
+        if (in_array($area,[$k,$v]))
+        {
+            $state = $record[$v.$fieldnames[0]];
+            $log = $record[$v.$fieldnames[1]];
+            $company = $record[$v.$fieldnames[2]];
+            $sn = $record[$v.$fieldnames[3]];
+            $time = strtotime($record[$v.$fieldnames[4]]);
+
+            $out .= "<ul>";
+            $out .= "<p>".$sn."</p>";
+
+            if ($currentTime - $time > TIME_LIMIT) //查询间隔时间已经超过24小时
+            {
+                $res = "";
+                if ($state == -1) //初始状态
+                {
+                    $res= getDataFromKuaidi100($company,$sn);
+                    //$res= getTestData($sn);
+                    $data = json_decode($res,true);
+                    //var_dump($data);
+
+                    update_by_packetid($area,$sn,$res,$data["state"]);
+                    $out .= build_log_html(json_decode($res,true)["data"]);
+                }
+                elseif (in_array($state,$finishStatus)) //终结状态
+                {
+                    $out .= build_log_html(json_decode($log,true)["data"]);
+                }
+                else
+                {
+                    $res= getDataFromKuaidi100($company,$sn);
+                    //$res= getTestData($sn);
+                    $data = json_decode($res,true);
+                    //var_dump($data);
+
+                    if ($state != $data["state"]) //状态有变化
+                    {
+                        update_by_packetid($area,$sn,$res,$data["state"]);
+                        $out .= build_log_html(json_decode($res,true)["data"]);
+                    }
+                    else
+                    {
+                        if ($log != $res) //JSON比较数据有变化
+                        {
+                            update_by_packetid($area,$sn,$res,$state);
+                            $out .= build_log_html(json_decode($res,true)["data"]);
+                        }
+                        else
+                        {
+                            $out .= build_log_html(json_decode($log,true)["data"]);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                $out .= build_log_html(json_decode($log,true)["data"]);
+            }
+
+            $out .= "</ul>";
+
+            break;
+        }
+    }
+
+    return $out;
+}
+
  // order_id, goods_id 不清楚，只能自己随机产生，两个理论上是等同的
  function getOrderId(){
     return str_pad(mt_rand(1, 99999), 5, '0', STR_PAD_LEFT);
@@ -354,7 +431,7 @@ function get_logis_goods_desc($goodsId)
                     <div class="section" id="r">
                     <div class="title"><span>铁路</span></div>
                     <div class="descrip">
-                    <p><span style="color:#330099">75149569879381</span></p>
+                    <p><span style="color:#330099">75145301313545</span></p>
                     <p>《根源之美》 庄申</p>
                     <p>《中国书法简明史》 高明一</p>
                     <p>&nbsp;</p>
@@ -487,7 +564,7 @@ function get_logis_cn_ids($logisDesc)
     return $ids;
 }
 
-function build_cn_log_html($infos)
+function build_log_html($infos)
 {
     $out = "";
     foreach($infos as $info)
@@ -523,8 +600,6 @@ switch($seite){
             $logisDesc = get_logis_goods_desc($goodsId);
             var_dump($logisDesc);
 
-            $currentTime = time();
-
             //解析logisDesc得到国内物流单号
             $cnIds = get_logis_cn_ids($logisDesc);
             var_dump($cnIds);
@@ -540,65 +615,16 @@ switch($seite){
                 //目前只支持铁路物流查询
                 if ($k == "r")
                 {
-                    $out .= "<div><h3>国内段物流信息</h3><ul>";
+                    $out .= "<div>";
+                    $out .= "<h3>国内段物流信息</h3>";
                     foreach ($v as $railway)
                     {
-                        $state = $railway[0]["cn_status"];
-                        $log = $railway[0]["cn_log"];
-                        $company = $railway[0]["cn_company"];
-                        $sn = $railway[0]["cn_packet_sn"];
-                        $out .= "<p>".$sn."</p>";
-
-                        $time = strtotime($railway[0]["cn_time"]);
-                        if ($currentTime - $time > TIME_LIMIT) //查询间隔时间已经超过24小时
+                        foreach ($railway as $r)
                         {
-                            $res = "";
-                            if ($state == -1) //初始状态
-                            {
-                                $res= getDataFromKuaidi100($company,$sn);
-                                //$res= getTestData($sn);
-                                $data = json_decode($res,true);
-                                //var_dump($data);
-
-                                update_by_packetid("c",$sn,$res,$data["state"]);
-                                $out .= build_cn_log_html(json_decode($res,true)["data"]);
-                            }
-                            elseif (in_array($state,$finishStatus)) //终结状态
-                            {
-                                $out .= build_cn_log_html(json_decode($log,true)["data"]);
-                            }
-                            else
-                            {
-                                $res= getDataFromKuaidi100($company,$sn);
-                                //$res= getTestData($sn);
-                                $data = json_decode($res,true);
-                                //var_dump($data);
-
-                                if ($state != $data["state"]) //状态有变化
-                                {
-                                    update_by_packetid("c",$sn,$res,$data["state"]);
-                                    $out .= build_cn_log_html(json_decode($res,true)["data"]);
-                                }
-                                else
-                                {
-                                    if ($log != $res) //JSON比较数据有变化
-                                    {
-                                        update_by_packetid("c",$sn,$res,$state);
-                                        $out .= build_cn_log_html(json_decode($res,true)["data"]);
-                                    }
-                                    else
-                                    {
-                                        $out .= build_cn_log_html(json_decode($log,true)["data"]);
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            $out .= build_cn_log_html(json_decode($log,true)["data"]);
+                            $out .= get_logis_html("c",$r);
                         }
                     }
-                    $out .= "</ul></div>";
+                    $out .= "</div>";
                 }
             }
 
@@ -638,62 +664,7 @@ switch($seite){
                     {
                         foreach ($railway as $r)
                         {
-                            $state = $r["de_status"];
-                            $log = $r["de_log"];
-                            $company = $r["de_company"];
-                            $sn = $r["de_packet_sn"];
-                            $out .= "<p>".$sn."</p>";
-                            $out .= "<ul>";
-
-                            $time = strtotime($r["de_time"]);
-                            if ($currentTime - $time > TIME_LIMIT) //查询间隔时间已经超过24小时
-                            {
-                                $res = "";
-                                if ($state == -1) //初始状态
-                                {
-                                    $res= getDataFromKuaidi100($company,$sn);
-                                    //$res= getTestData($sn);
-                                    $data = json_decode($res,true);
-                                    //var_dump($data);
-
-                                    update_by_packetid("d",$sn,$res,$data["state"]);
-                                    $out .= build_cn_log_html(json_decode($res,true)["data"]);
-                                }
-                                elseif (in_array($state,$finishStatus)) //终结状态
-                                {
-                                    $out .= build_cn_log_html(json_decode($log,true)["data"]);
-                                }
-                                else
-                                {
-                                    $res= getDataFromKuaidi100($company,$sn);
-                                    //$res= getTestData($sn);
-                                    $data = json_decode($res,true);
-                                    //var_dump($data);
-
-                                    if ($state != $data["state"]) //状态有变化
-                                    {
-                                        update_by_packetid("d",$sn,$res,$data["state"]);
-                                        $out .= build_cn_log_html(json_decode($res,true)["data"]);
-                                    }
-                                    else
-                                    {
-                                        if ($log != $res) //JSON比较数据有变化
-                                        {
-                                            update_by_packetid("d",$sn,$res,$state);
-                                            $out .= build_cn_log_html(json_decode($res,true)["data"]);
-                                        }
-                                        else
-                                        {
-                                            $out .= build_cn_log_html(json_decode($log,true)["data"]);
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                $out .= build_cn_log_html(json_decode($log,true)["data"]);
-                            }
-                            $out .= "</ul>";
+                            $out .= get_logis_html("d",$r);
                         }
                     }
                     $out .= "</div>";
@@ -704,7 +675,7 @@ switch($seite){
 
             //获得现在的信息
             $datas = getAllByGoodsid($goodsId);
-            //$currentTime = time();
+            $currentTime = time();
 
             //根据状态位，和时间决定，是不是调用 API，如果不需要调用，就返回现有数据，
             // 如果需要，就调用调用api 返回数据，
