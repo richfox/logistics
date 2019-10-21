@@ -122,6 +122,8 @@ if (mysqli_connect_errno()){
 	exit();
 }
 
+mysqli_set_charset($connect,"utf8");
+
 $htmlOfHeader='
 <!DOCTYPE html>
 <html >
@@ -424,8 +426,12 @@ function get_logis_goods_id($orderSn)
 //ecs_test_goods表根据物流商品Id得到物流商品描述
 function get_logis_goods_desc($goodsId)
 {
+    global $connect;
+    $sql = "SELECT * FROM ecs_test_goods WHERE goods_id = '$goodsId'";
+    $result = mysqli_query($connect, $sql);
+    $logisGoodsDesc = mysqli_fetch_array($result,MYSQL_ASSOC)["goods_desc"];
     //测试数据
-    $logisGoodsDesc = '<div><zws-product>
+    /*$logisGoodsDesc = '<div><zws-product>
                     <p><font size="6">2019052052858</font></p>
                     <p>&nbsp;</p>
                     <div class="section" id="r">
@@ -454,7 +460,7 @@ function get_logis_goods_desc($goodsId)
                     <p>&nbsp;</p>
                     </div>
                     </div>
-                    </zws-product></div>';
+                    </zws-product></div>';*/
 
     return $logisGoodsDesc;
 }
@@ -597,7 +603,7 @@ switch($seite){
            // var_dump($_POST);
             $sn = $_POST["order_sn"];
             $goodsId = get_logis_goods_id($sn);
-            $logisDesc = get_logis_goods_desc($goodsId);
+            $logisDesc = get_logis_goods_desc(406);
             var_dump($logisDesc);
 
             //解析logisDesc得到国内物流单号
