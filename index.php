@@ -405,41 +405,51 @@ function getGoodsId(){
 
 
 //从订单号orderSn找到物流商品Id
-function get_logis_goods_id($orderSn)
+function get_logis_goods_id($sn)
 {
+    global $connect;
+    $orderSn = trim($sn);
+
     $logisGoodsId = 0;
 
     //ecs_test_order_info表根据订单号查询订单id
-    $orderId = 166;
+    $sql = "SELECT * FROM ecs_test_order_info WHERE order_sn = '$orderSn'";
+    $result = mysqli_query($connect, $sql);
+    $orderId = mysqli_fetch_array($result,MYSQLI_ASSOC)["order_id"];
 
     //ecs_test_order_goods表根据订单id查询订单下所有商品id
-    $goodsIds = array(40147, 3002, 4, 3590);
-
-    //有中欧铁路物流吗
-    if (in_array(3590,$goodsIds)) //3590表示铁路物流
+    $sql = "SELECT * FROM ecs_test_order_goods WHERE order_id = '$orderId'";
+    $result = mysqli_query($connect, $sql);
+    $orderGoods = mysqli_fetch_all($result,MYSQLI_ASSOC);
+    $goodsIds = [];
+    foreach ($orderGoods as $g)
     {
-        $found = false;
+        $goodsIds[] = $g["goods_id"];
+    }
+
+    //目前只支持铁路物流查询
+    if (in_array(3590,$goodsIds)) //3590表示铁路物流自助称重模板
+    {
+        $found = false; //找到物流商品吗
         for ($i=0; $i<count($goodsIds); $i++)
         {
             //ecs_test_goods表根据商品id查询分类id
-            $catId = 82;
+            $sql = "SELECT * FROM ecs_test_goods WHERE goods_id = '$goodsIds[$i]'";
+            $result = mysqli_query($connect, $sql);
+            $goods = mysqli_fetch_array($result,MYSQLI_ASSOC);
+            $catId = $goods["cat_id"];
+            $goodsName = $goods["goods_name"];
 
             if ($catId == 82) //82表示订购分类
             {
-                $logisGoodsId = $goodsIds[$i];
-                $found = true;
-                break;
+                if (!preg_match("/template/i",$goodsName)) //非模板商品
+                {
+                    $logisGoodsId = $goodsIds[$i];
+                    $found = true;
+                    break;
+                }
             }
         }
-
-        if ($found == false)
-        {
-            echo "没找到物流商品";
-        }
-    }
-    else
-    {
-        echo "没找到物流商品";
     }
 
     return $logisGoodsId;
@@ -452,7 +462,7 @@ function get_logis_goods_desc($goodsId)
     global $connect;
     $sql = "SELECT * FROM ecs_test_goods WHERE goods_id = '$goodsId'";
     $result = mysqli_query($connect, $sql);
-    $logisGoodsDesc = mysqli_fetch_array($result,MYSQL_ASSOC)["goods_desc"];
+    $logisGoodsDesc = mysqli_fetch_array($result,MYSQLI_ASSOC)["goods_desc"];
 
     return $logisGoodsDesc;
 }
@@ -583,78 +593,86 @@ switch($seite){
         if(isset($_POST["submit_search"])){
            // var_dump($_POST);
             $sn = $_POST["order_sn"];
-            $goodsId = get_logis_goods_id($sn);
-            $logisDesc = get_logis_goods_desc(406);
-            var_dump($logisDesc);
-
-            //解析logisDesc得到国内物流单号
-            $cnIds = get_logis_cn_ids($logisDesc);
-            var_dump($cnIds);
-
+            
             $out = "<zws>"; //查询结果html输出
 
-            //zws_test_logis_cn表：通过国内物流单号查询国内段物流信息
-            //echo "国内段物流信息";
-            $cnLogs = get_logis_cn_logs($cnIds);
-            var_dump($cnLogs);
-            foreach ($cnLogs as $k=>$v)
+            $goodsId = get_logis_goods_id($sn);
+            if ($goodsId == 0)
             {
-                //目前只支持铁路物流查询
-                if ($k == "r")
-                {
-                    $out .= "<div>";
-                    $out .= "<h3>国内段物流信息</h3>";
-                    foreach ($v as $railway)
-                    {
-                        foreach ($railway as $r)
-                        {
-                            $out .= get_logis_html("c",$r);
-                        }
-                    }
-                    $out .= "</div>";
-                }
+                $out .= "<div><h3>没找到物流信息，请输入正确订单号</h3></div>";
             }
-
-            //zws_test_railway_inter表：通过zws_test_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
-            //echo "国际段铁路物流信息";
-            $interLogs = get_logis_inter_logs($cnLogs);
-            var_dump($interLogs);
-            foreach ($interLogs as $k=>$v)
+            else
             {
-                //目前只支持铁路物流查询
-                if ($k == "r")
-                {
-                    $out .= "<div><h3>国际段铁路物流信息</h3><ul>";
-                    foreach ($v as $railway)
-                    {
-                        $log = $railway[0]["inter_log"];
-                        $sn = $railway[0]["railway_sn"];
-                        $out .= "<p>".$sn."</p>";
-                        $out .= "<li>".$log."</li>";
-                    }
-                    $out .= "</ul></div>";
-                }
-            }
+                $logisDesc = get_logis_goods_desc($goodsId);
+                var_dump($logisDesc);
 
-            //zws_test_logis_de表：通过zws_test_logis_cn表外键railway_id查询德国段ups物流信息
-            //echo "德国段物流信息";
-            $deLogs = get_logis_de_logs($cnLogs);
-            var_dump($deLogs);
-            foreach ($deLogs as $k=>$v)
-            {
-                //目前只支持铁路物流查询
-                if ($k == "r")
+                //解析logisDesc得到国内物流单号
+                $cnIds = get_logis_cn_ids($logisDesc);
+                var_dump($cnIds);
+
+                //zws_test_logis_cn表：通过国内物流单号查询国内段物流信息
+                //echo "国内段物流信息";
+                $cnLogs = get_logis_cn_logs($cnIds);
+                var_dump($cnLogs);
+                foreach ($cnLogs as $k=>$v)
                 {
-                    $out .= "<div>";
-                    $out .= "<h3>德国段物流信息</h3>";
-                    foreach ($v as $railway)
+                    //目前只支持铁路物流查询
+                    if ($k == "r")
                     {
-                        foreach ($railway as $r)
+                        $out .= "<div>";
+                        $out .= "<h3>国内段物流信息</h3>";
+                        foreach ($v as $railway)
                         {
-                            $out .= get_logis_html("d",$r);
+                            foreach ($railway as $r)
+                            {
+                                $out .= get_logis_html("c",$r);
+                            }
                         }
+                        $out .= "</div>";
                     }
-                    $out .= "</div>";
+                }
+
+                //zws_test_railway_inter表：通过zws_test_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
+                //echo "国际段铁路物流信息";
+                $interLogs = get_logis_inter_logs($cnLogs);
+                var_dump($interLogs);
+                foreach ($interLogs as $k=>$v)
+                {
+                    //目前只支持铁路物流查询
+                    if ($k == "r")
+                    {
+                        $out .= "<div><h3>国际段铁路物流信息</h3><ul>";
+                        foreach ($v as $railway)
+                        {
+                            $log = $railway[0]["inter_log"];
+                            $sn = $railway[0]["railway_sn"];
+                            $out .= "<p>".$sn."</p>";
+                            $out .= "<li>".$log."</li>";
+                        }
+                        $out .= "</ul></div>";
+                    }
+                }
+
+                //zws_test_logis_de表：通过zws_test_logis_cn表外键railway_id查询德国段ups物流信息
+                //echo "德国段物流信息";
+                $deLogs = get_logis_de_logs($cnLogs);
+                var_dump($deLogs);
+                foreach ($deLogs as $k=>$v)
+                {
+                    //目前只支持铁路物流查询
+                    if ($k == "r")
+                    {
+                        $out .= "<div>";
+                        $out .= "<h3>德国段物流信息</h3>";
+                        foreach ($v as $railway)
+                        {
+                            foreach ($railway as $r)
+                            {
+                                $out .= get_logis_html("d",$r);
+                            }
+                        }
+                        $out .= "</div>";
+                    }
                 }
             }
 
