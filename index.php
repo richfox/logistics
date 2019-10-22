@@ -318,58 +318,77 @@ function get_logis_html($area,$record)
             $out .= "<ul>";
             $out .= "<p>".$sn."</p>";
 
-            if ($currentTime - $time > TIME_LIMIT) //查询间隔时间已经超过24小时
+            $res = "";
+            if ($state == -1) //初始状态
             {
-                $res = "";
-                if ($state == -1) //初始状态
-                {
-                    $res= getDataFromKuaidi100($company,$sn);
-                    //$res= getTestData($sn);
-                    $data = json_decode($res,true);
-                    //var_dump($data);
+                //初始态不检查api调用时间间隔
+                $res= getDataFromKuaidi100($company,$sn);
+                $data = json_decode($res,true);
+                //var_dump($data);
 
-                    update_by_packetid($area,$sn,$res,$data["state"]);
-                    $out .= build_log_html(json_decode($res,true)["data"]);
-                }
-                elseif (in_array($state,$finishStatus)) //终结状态
-                {
-                    $out .= build_log_html(json_decode($log,true)["data"]);
-                }
-                else
+                update_by_packetid($area,$sn,$res,$data["state"]);
+                $out .= build_log_html($res);
+            }
+            elseif (in_array($state,$finishStatus)) //终结状态
+            {
+                $out .= build_log_html($log);
+            }
+            else
+            {
+                if ($currentTime - $time > TIME_LIMIT) //查询间隔时间已经超过24小时
                 {
                     $res= getDataFromKuaidi100($company,$sn);
-                    //$res= getTestData($sn);
                     $data = json_decode($res,true);
                     //var_dump($data);
 
                     if ($state != $data["state"]) //状态有变化
                     {
                         update_by_packetid($area,$sn,$res,$data["state"]);
-                        $out .= build_log_html(json_decode($res,true)["data"]);
+                        $out .= build_log_html($res);
                     }
                     else
                     {
                         if ($log != $res) //JSON比较数据有变化
                         {
                             update_by_packetid($area,$sn,$res,$state);
-                            $out .= build_log_html(json_decode($res,true)["data"]);
+                            $out .= build_log_html($res);
                         }
                         else
                         {
-                            $out .= build_log_html(json_decode($log,true)["data"]);
+                            $out .= build_log_html($log);
                         }
                     }
                 }
-            }
-            else
-            {
-                $out .= build_log_html(json_decode($log,true)["data"]);
+                else
+                {
+                    $out .= build_log_html($log);
+                }
             }
 
             $out .= "</ul>";
 
             break;
         }
+    }
+
+    return $out;
+}
+
+function build_log_html($log)
+{
+    $out = "";
+
+    $info = json_decode($log,true);
+    if ($info["message"] == "ok")
+    {
+        foreach ($info["data"] as $data)
+        {
+            $out .= "<li>".$data["ftime"]." ".$data["context"]."</li>";
+        }
+    }
+    else
+    {
+        $out .= "<li>".$info["message"]."</li>";
     }
 
     return $out;
@@ -542,17 +561,6 @@ function get_logis_cn_ids($logisDesc)
 
     return $ids;
 }
-
-function build_log_html($infos)
-{
-    $out = "";
-    foreach($infos as $info)
-    {
-        $out .= "<li>".$info["ftime"]." ".$info["context"]."</li>";
-    }
-    return $out;
-}
-
 
 
 
