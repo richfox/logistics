@@ -122,7 +122,11 @@ if (mysqli_connect_errno()){
 	exit();
 }
 
-mysqli_set_charset($connect,"utf8");
+if (!mysqli_set_charset($connect, "utf8")) {
+    printf("Error loading character set utf8: %s\n", mysqli_error($connect));
+} else {
+    printf("Current character set: %s\n", mysqli_character_set_name($connect));
+}
 
 $htmlOfHeader='
 <!DOCTYPE html>
@@ -430,37 +434,6 @@ function get_logis_goods_desc($goodsId)
     $sql = "SELECT * FROM ecs_test_goods WHERE goods_id = '$goodsId'";
     $result = mysqli_query($connect, $sql);
     $logisGoodsDesc = mysqli_fetch_array($result,MYSQL_ASSOC)["goods_desc"];
-    //测试数据
-    /*$logisGoodsDesc = '<div><zws-product>
-                    <p><font size="6">2019052052858</font></p>
-                    <p>&nbsp;</p>
-                    <div class="section" id="r">
-                    <div class="title"><span>铁路</span></div>
-                    <div class="descrip">
-                    <p><span style="color:#330099">75145301313545</span></p>
-                    <p>《根源之美》 庄申</p>
-                    <p>《中国书法简明史》 高明一</p>
-                    <p>&nbsp;</p>
-                    <p><span style="color:#330099">805398573050226555</span></p>
-                    <p><img src="/images/upload/Image/20190521221829.jpg" alt="" width="680" /></p>
-                    <p>&nbsp;</p>
-                    </div>
-                    </div>
-                    <div class="section" id="airline">
-                    <div class="title"><span>空运</span></div>
-                    <div class="descrip">
-                    <p><span style="color:#330099">中通75144946047320</span></p>
-                    <p>幼小衔接阶梯教程&mdash;&mdash;看图说话</p>
-                    <p>&nbsp;</p>
-                    <p><span style="color:#330099">申通3707110314956</span></p>
-                    <p>真相只有一个3册</p>
-                    <p>&nbsp;</p>
-                    <p><span style="color:#330099">3707166824747</span></p>
-                    <p>DK图解数学+图解科学</p>
-                    <p>&nbsp;</p>
-                    </div>
-                    </div>
-                    </zws-product></div>';*/
 
     return $logisGoodsDesc;
 }
