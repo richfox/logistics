@@ -467,7 +467,6 @@ function get_logis_goods_desc($goodsId)
     return $logisGoodsDesc;
 }
 
-
 function get_logis_cn_logs($cnIds)
 {
     $logs = [];
@@ -481,9 +480,27 @@ function get_logis_cn_logs($cnIds)
         {
             foreach ($cnIds[$k] as $id)
             {
-                $sql = "SELECT * FROM zws_test_logis_cn WHERE cn_packet_sn = '$id'";
+                $sn = "";
+                $matches = preg_split("/([a-zA-Z0-9\-]+)/",$id,-1,PREG_SPLIT_NO_EMPTY|PREG_SPLIT_DELIM_CAPTURE);
+                if (sizeof($matches) == 1)
+                {
+                    $sn = $matches[0];
+                }
+                else
+                {
+                    $sn = $matches[1];
+                }
+
+                $sql = "SELECT * FROM zws_test_logis_cn WHERE cn_packet_sn = '$sn'";
                 $result= mysqli_query($connect,$sql);
-                $logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                if ($result->num_rows > 0)
+                {
+                    $logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                }
+                else
+                {
+                    echo "<p>错误:".$id."没找到</p>";
+                }
             }
         }
     }
