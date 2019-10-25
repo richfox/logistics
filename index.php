@@ -322,6 +322,7 @@ function get_logis_html($area,$record)
             if ($state == -1) //初始状态
             {
                 //初始态不检查api调用时间间隔
+                //todo: 公司代号$company为空时调用附加信息或者智能判断接口
                 $res= getDataFromKuaidi100($company,$sn);
                 $data = json_decode($res,true);
                 //var_dump($data);
@@ -331,6 +332,7 @@ function get_logis_html($area,$record)
             }
             elseif (in_array($state,$finishStatus)) //终结状态
             {
+                //todo: $state为3时bug
                 $out .= build_log_html($log);
             }
             else
