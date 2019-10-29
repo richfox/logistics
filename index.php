@@ -527,16 +527,16 @@ function get_logis_cn_logs($cnIds)
                     $sn = $matches[1];
                 }
 
-                $sql = "SELECT * FROM zws_test_logis_cn WHERE cn_packet_sn = '$sn'";
+                $sql = "SELECT * FROM zws_test_logis_cn WHERE cn_packet_sn REGEXP '$sn'";
                 $result= mysqli_query($connect,$sql);
                 if ($result->num_rows > 0)
                 {
-                    $all = mysqli_fetch_all($result,MYSQLI_ASSOC);
-                    if (!$all[0]["cn_company"])
+                    $recs = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                    if (!$recs[0]["cn_company"])
                     {
-                        $all[0]["cn_company"] = $company;
+                        $recs[0]["cn_company"] = $company;
                     }
-                    $logs[$k][] = $all;
+                    $logs[$k][] = $recs;
                 }
                 else
                 {
