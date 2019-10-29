@@ -303,6 +303,7 @@ function get_logis_html($area,$record)
     $out = "";
     $currentTime = time();
     global $logisAreas;
+    global $finishStatus;
 
     $fieldnames = ["_status","_log","_company","_packet_sn","_time"];
     foreach ($logisAreas as $k=>$v)
@@ -332,7 +333,6 @@ function get_logis_html($area,$record)
             }
             elseif (in_array($state,$finishStatus)) //终结状态
             {
-                //todo: $state为3时bug
                 $out .= build_log_html($log);
             }
             else
