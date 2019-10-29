@@ -26,10 +26,26 @@ define('TIME_LIMIT', 86400);
 */
 $finishStatus = array(3, 4, 7, 99);
 
-//物流形式
+//物流
 $transports = ["s"=>"ship","r"=>"railway","a"=>"airline"];
 $logisAreas = ["c"=>"cn","i"=>"inter","d"=>"de"];
-
+$logisCompanys = ["顺丰"=>"shunfeng",
+                 "申通"=>"shentong",
+                 "圆通"=>"yuantong",
+                 "中通"=>"zhongtong",
+                 "百世"=>"huitongkuaidi",
+                 "韵达"=>"yunda",
+                 "宅急送"=>"zhaijisong",
+                 "天天"=>"tiantian",
+                 "德邦"=>"debangwuliu",
+                 "速尔"=>"suer",
+                 "优速"=>"youshuwuliu",
+                 "京东"=>"jd",
+                 "品骏"=>"pjbest",
+                 "邮政"=>"youzhengguonei",
+                 "EMS"=>"ems",
+                 "DHL"=>"dhlen",
+                 "UPS"=>"ups"];
 #######
 ## API 调用
 ########
@@ -323,10 +339,9 @@ function get_logis_html($area,$record)
             if ($state == -1) //初始状态
             {
                 //初始态不检查api调用时间间隔
-                //todo: 公司代号$company为空时调用附加信息或者智能判断接口
+                //todo: 公司代号$company为空时调用智能判断接口
                 $res= getDataFromKuaidi100($company,$sn);
                 $data = json_decode($res,true);
-                //var_dump($data);
 
                 update_by_packetid($area,$sn,$res,$data["state"]);
                 $out .= build_log_html($res);
@@ -339,9 +354,9 @@ function get_logis_html($area,$record)
             {
                 if ($currentTime - $time > TIME_LIMIT) //查询间隔时间已经超过24小时
                 {
+                    //todo: 公司代号$company为空时调用智能判断接口
                     $res= getDataFromKuaidi100($company,$sn);
                     $data = json_decode($res,true);
-                    //var_dump($data);
 
                     if ($state != $data["state"]) //状态有变化
                     {
@@ -469,12 +484,29 @@ function get_logis_goods_desc($goodsId)
     return $logisGoodsDesc;
 }
 
+function get_company_code($company)
+{
+    $code = "";
+    global $logisCompanys;
+    foreach ($logisCompanys as $k=>$v)
+    {
+        if (preg_match("/".$k."/",$company))
+        {
+            $code = $v;
+            break;
+        }
+    }
+
+    return $code;
+}
+
 function get_logis_cn_logs($cnIds)
 {
     $logs = [];
 
     global $connect;
     global $transports;
+
     foreach ($transports as $k=>$v)
     {
         $logs[$k] = [];
@@ -491,11 +523,7 @@ function get_logis_cn_logs($cnIds)
                 }
                 else
                 {
-                    $company = $matches[0];
-                    if (preg_match("/圆通/",$company))
-                    {
-                        $company = "yuantong";
-                    }
+                    $company = get_company_code($matches[0]);
                     $sn = $matches[1];
                 }
 
@@ -503,7 +531,12 @@ function get_logis_cn_logs($cnIds)
                 $result= mysqli_query($connect,$sql);
                 if ($result->num_rows > 0)
                 {
-                    $logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                    $all = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                    if (!$all[0]["cn_company"])
+                    {
+                        $all[0]["cn_company"] = $company;
+                    }
+                    $logs[$k][] = $all;
                 }
                 else
                 {
