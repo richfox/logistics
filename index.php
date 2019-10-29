@@ -483,6 +483,7 @@ function get_logis_cn_logs($cnIds)
             foreach ($cnIds[$k] as $id)
             {
                 $sn = "";
+                $company = "";
                 $matches = preg_split("/([a-zA-Z0-9\-]+)/",$id,-1,PREG_SPLIT_NO_EMPTY|PREG_SPLIT_DELIM_CAPTURE);
                 if (sizeof($matches) == 1)
                 {
@@ -490,6 +491,11 @@ function get_logis_cn_logs($cnIds)
                 }
                 else
                 {
+                    $company = $matches[0];
+                    if (preg_match("/圆通/",$company))
+                    {
+                        $company = "yuantong";
+                    }
                     $sn = $matches[1];
                 }
 
@@ -583,7 +589,7 @@ function get_logis_cn_ids($logisDesc)
         {
             foreach ($elems as $elem)
             {
-                $ids[$k][] = $elem->textContent;
+                $ids[$k][] = utf8_decode($elem->textContent);
             }
         }
     }
