@@ -27,9 +27,9 @@ define('TIME_LIMIT', 86400);
 $finishStatus = array(3, 4, 7, 99);
 
 //物流
-$transports = ["s"=>"ship","r"=>"railway","a"=>"airline"];
-$logisAreas = ["c"=>"cn","i"=>"inter","d"=>"de"];
-$logisCompanys = ["顺丰"=>"shunfeng",
+$transports = array("s"=>"ship","r"=>"railway","a"=>"airline");
+$logisAreas = array("c"=>"cn","i"=>"inter","d"=>"de");
+$logisCompanys = array("顺丰"=>"shunfeng",
                  "申通"=>"shentong",
                  "圆通"=>"yuantong",
                  "中通"=>"zhongtong",
@@ -45,7 +45,7 @@ $logisCompanys = ["顺丰"=>"shunfeng",
                  "邮政"=>"youzhengguonei",
                  "EMS"=>"ems",
                  "DHL"=>"dhlen",
-                 "UPS"=>"ups"];
+                 "UPS"=>"ups");
 #######
 ## API 调用
 ########
@@ -297,7 +297,7 @@ function update_by_packetid($area,$sn,$log,$status)
     global $logisAreas;
 
     $tablename = "zws_test_logis_";
-    $fieldnames = ["_log","_status","_packet_sn"];
+    $fieldnames = array("_log","_status","_packet_sn");
     foreach ($logisAreas as $k=>$v)
     {
         if (in_array($area,array($k,$v)))
@@ -321,7 +321,7 @@ function get_logis_html($area,$record)
     global $logisAreas;
     global $finishStatus;
 
-    $fieldnames = ["_status","_log","_company","_packet_sn","_time"];
+    $fieldnames = array("_status","_log","_company","_packet_sn","_time");
     foreach ($logisAreas as $k=>$v)
     {
         if (in_array($area,array($k,$v)))
@@ -432,13 +432,14 @@ function get_logis_goods_id($sn)
     //ecs_test_order_info表根据订单号查询订单id
     $sql = "SELECT * FROM ecs_test_order_info WHERE order_sn = '$orderSn'";
     $result = mysqli_query($connect, $sql);
-    $orderId = mysqli_fetch_array($result,MYSQLI_ASSOC)["order_id"];
+    $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
+    $orderId = $row["order_id"];
 
     //ecs_test_order_goods表根据订单id查询订单下所有商品id
     $sql = "SELECT * FROM ecs_test_order_goods WHERE order_id = '$orderId'";
     $result = mysqli_query($connect, $sql);
     $orderGoods = mysqli_fetch_all($result,MYSQLI_ASSOC);
-    $goodsIds = [];
+    $goodsIds = array();
     foreach ($orderGoods as $g)
     {
         $goodsIds[] = $g["goods_id"];
@@ -479,7 +480,8 @@ function get_logis_goods_desc($goodsId)
     global $connect;
     $sql = "SELECT * FROM ecs_test_goods WHERE goods_id = '$goodsId'";
     $result = mysqli_query($connect, $sql);
-    $logisGoodsDesc = mysqli_fetch_array($result,MYSQLI_ASSOC)["goods_desc"];
+    $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
+    $logisGoodsDesc = $row["goods_desc"];
 
     return $logisGoodsDesc;
 }
@@ -502,14 +504,14 @@ function get_company_code($company)
 
 function get_logis_cn_logs($cnIds)
 {
-    $logs = [];
+    $logs = array();
 
     global $connect;
     global $transports;
 
     foreach ($transports as $k=>$v)
     {
-        $logs[$k] = [];
+        $logs[$k] = array();
         if ($k == "r")
         {
             foreach ($cnIds[$k] as $id)
@@ -552,13 +554,13 @@ function get_logis_cn_logs($cnIds)
 
 function get_logis_inter_logs($cnLogs)
 {
-    $logs = [];
+    $logs = array();
 
     global $connect;
     global $transports;
     foreach ($transports as $k=>$v)
     {
-        $logs[$k] = [];
+        $logs[$k] = array();
         if ($k == "r")
         {
             foreach ($cnLogs[$k] as $cnlog)
@@ -576,13 +578,13 @@ function get_logis_inter_logs($cnLogs)
 
 function get_logis_de_logs($cnLogs)
 {
-    $logs = [];
+    $logs = array();
 
     global $connect;
     global $transports;
     foreach ($transports as $k=>$v)
     {
-        $logs[$k] = [];
+        $logs[$k] = array();
         if ($k == "r")
         {
             foreach ($cnLogs[$k] as $cnlog)
@@ -607,7 +609,7 @@ function get_logis_de_logs($cnLogs)
 
 function get_logis_cn_ids($logisDesc)
 {
-    $ids = [];
+    $ids = array();
 
     $dom = new DomDocument();
     $dom->loadHTML($logisDesc);
@@ -616,7 +618,7 @@ function get_logis_cn_ids($logisDesc)
     global $transports;
     foreach ($transports as $k=>$v)
     {
-        $ids[$k] = [];
+        $ids[$k] = array();
         $elems = $xpath->query("//div[@id='$k' or @id='$v']/div[@class='descrip']//span/text()");
         if (!is_null($elems))
         {
@@ -759,7 +761,8 @@ switch($seite){
                     if(md5($json_string) != md5($data["cn_log"])){
                         $data["cn_log"]= $json_string;
 
-                        $newStatus = json_decode($json_string, true)["state"]; 
+                        $row = json_decode($json_string, true);
+                        $newStatus = $row["state"]; 
                         if(in_array($newStatus, $finishStatus)){
                             $newStatus= 1;
                         }else{
@@ -777,7 +780,8 @@ switch($seite){
                             <h3>" .$cnPackId."</h3> 
                         <ul> " ;
                 
-                $cnPackInfos = json_decode($data["cn_log"], true)["data"];
+                $row = json_decode($data["cn_log"], true);
+                $cnPackInfos = $row["data"];
                 
                 foreach($cnPackInfos as $cnPackInfo){
                     //var_dump($cnPackInfo);
