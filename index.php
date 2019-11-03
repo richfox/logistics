@@ -300,7 +300,7 @@ function update_by_packetid($area,$sn,$log,$status)
     $fieldnames = ["_log","_status","_packet_sn"];
     foreach ($logisAreas as $k=>$v)
     {
-        if (in_array($area,[$k,$v]))
+        if (in_array($area,array($k,$v)))
         {
             $tablename .= $v;
             $flog = $v.$fieldnames[0];
@@ -324,7 +324,7 @@ function get_logis_html($area,$record)
     $fieldnames = ["_status","_log","_company","_packet_sn","_time"];
     foreach ($logisAreas as $k=>$v)
     {
-        if (in_array($area,[$k,$v]))
+        if (in_array($area,array($k,$v)))
         {
             $state = $record[$v.$fieldnames[0]];
             $log = $record[$v.$fieldnames[1]];
