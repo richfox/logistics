@@ -704,8 +704,16 @@ switch($seite){
                         $out .= "<div><h3>国际段铁路物流信息</h3><ul>";
                         foreach ($v as $railway)
                         {
-                            $log = $railway[0]["inter_log"];
-                            $sn = $railway[0]["railway_sn"];
+                            if (version_compare(PHP_VERSION,'5.6.0','ge'))
+                            {
+                                $log = $railway[0]["inter_log"];
+                                $sn = $railway[0]["railway_sn"];
+                            }
+                            else
+                            {
+                                $log = $railway["inter_log"];
+                                $sn = $railway["railway_sn"];
+                            }
                             $out .= "<p>".$sn."</p>";
                             $out .= "<li>".$log."</li>";
                         }
@@ -726,9 +734,16 @@ switch($seite){
                         $out .= "<h3>德国段物流信息</h3>";
                         foreach ($v as $railway)
                         {
-                            foreach ($railway as $r)
+                            if (version_compare(PHP_VERSION,'5.6.0','ge'))
                             {
-                                $out .= get_logis_html("d",$r);
+                                foreach ($railway as $r)
+                                {
+                                    $out .= get_logis_html("d",$r);
+                                }
+                            }
+                            else
+                            {
+                                $out .= get_logis_html("d",$railway);
                             }
                         }
                         $out .= "</div>";
