@@ -438,7 +438,12 @@ function get_logis_goods_id($sn)
     //ecs_test_order_goods表根据订单id查询订单下所有商品id
     $sql = "SELECT * FROM ecs_test_order_goods WHERE order_id = '$orderId'";
     $result = mysqli_query($connect, $sql);
-    $orderGoods = mysqli_fetch_all($result,MYSQLI_ASSOC);
+    //$orderGoods = mysqli_fetch_all($result,MYSQLI_ASSOC);
+    $orderGoods = array();
+    while ($row = $result->fetch_assoc())
+    {
+        $orderGoods[] = $row;
+    }
     $goodsIds = array();
     foreach ($orderGoods as $g)
     {
@@ -533,7 +538,12 @@ function get_logis_cn_logs($cnIds)
                 $result= mysqli_query($connect,$sql);
                 if ($result->num_rows > 0)
                 {
-                    $recs = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                    //$recs = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                    $recs = array();
+                    while ($row = $result->fetch_assoc())
+                    {
+                        $recs[] = $row;
+                    }
                     if (!$recs[0]["cn_company"])
                     {
                         $recs[0]["cn_company"] = $company;
@@ -568,7 +578,11 @@ function get_logis_inter_logs($cnLogs)
                 $id = $cnlog[0]["railway_id"];
                 $sql = "SELECT * FROM zws_test_railway_inter WHERE id = '$id'";
                 $result= mysqli_query($connect,$sql);
-                $logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                //$logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                while ($row = $result->fetch_assoc())
+                {
+                    $logs[$k][] = $row;
+                }
             }
         }
     }
@@ -592,7 +606,11 @@ function get_logis_de_logs($cnLogs)
                 $id = $cnlog[0]["railway_id"];
                 $sql = "SELECT * FROM zws_test_logis_de WHERE railway_id = '$id'";
                 $result= mysqli_query($connect,$sql);
-                $logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                //$logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                while ($row = $result->fetch_assoc())
+                {
+                    $logs[$k][] = $row;
+                }
             }
         }
     }
@@ -704,16 +722,8 @@ switch($seite){
                         $out .= "<div><h3>国际段铁路物流信息</h3><ul>";
                         foreach ($v as $railway)
                         {
-                            if (version_compare(PHP_VERSION,'5.6.0','ge'))
-                            {
-                                $log = $railway[0]["inter_log"];
-                                $sn = $railway[0]["railway_sn"];
-                            }
-                            else
-                            {
-                                $log = $railway["inter_log"];
-                                $sn = $railway["railway_sn"];
-                            }
+                            $log = $railway["inter_log"];
+                            $sn = $railway["railway_sn"];
                             $out .= "<p>".$sn."</p>";
                             $out .= "<li>".$log."</li>";
                         }
@@ -734,17 +744,7 @@ switch($seite){
                         $out .= "<h3>德国段物流信息</h3>";
                         foreach ($v as $railway)
                         {
-                            if (version_compare(PHP_VERSION,'5.6.0','ge'))
-                            {
-                                foreach ($railway as $r)
-                                {
-                                    $out .= get_logis_html("d",$r);
-                                }
-                            }
-                            else
-                            {
-                                $out .= get_logis_html("d",$railway);
-                            }
+                            $out .= get_logis_html("d",$railway);
                         }
                         $out .= "</div>";
                     }
