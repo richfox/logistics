@@ -22,6 +22,7 @@ define('TIME_LIMIT', 86400);
 /*
 * 快递单当前状态，包括0在途，1揽收，2疑难，3签收，4退签，5派件，6退回，7转投 等8个状态
 * 新增两个状态：初始状态为-1, 手动定义终结状态为99
+* 如果查询不成功，状态设为API返回代码
 * 定义结束状态的判定
 */
 $finishStatus = array(3, 4, 7, 99);
@@ -343,8 +344,16 @@ function get_logis_html($area,$record)
                 $res= getDataFromKuaidi100($company,$sn);
                 $data = json_decode($res,true);
 
-                update_by_packetid($area,$sn,$res,$data["state"]);
-                $out .= build_log_html($res);
+                if ($data["message"] == "ok")
+                {
+                    update_by_packetid($area,$sn,$res,$data["state"]);
+                    $out .= build_log_html($res);
+                }
+                else
+                {
+                    update_by_packetid($area,$sn,$res,$data["returnCode"]);
+                    $out .= build_log_html($res);
+                }
             }
             elseif (in_array($state,$finishStatus)) //终结状态
             {
@@ -358,22 +367,30 @@ function get_logis_html($area,$record)
                     $res= getDataFromKuaidi100($company,$sn);
                     $data = json_decode($res,true);
 
-                    if ($state != $data["state"]) //状态有变化
+                    if ($data["message"] == "ok")
                     {
-                        update_by_packetid($area,$sn,$res,$data["state"]);
-                        $out .= build_log_html($res);
-                    }
-                    else
-                    {
-                        if ($log != $res) //JSON比较数据有变化
+                        if ($state != $data["state"]) //状态有变化
                         {
-                            update_by_packetid($area,$sn,$res,$state);
+                            update_by_packetid($area,$sn,$res,$data["state"]);
                             $out .= build_log_html($res);
                         }
                         else
                         {
-                            $out .= build_log_html($log);
+                            if ($log != $res) //JSON比较数据有变化
+                            {
+                                update_by_packetid($area,$sn,$res,$state);
+                                $out .= build_log_html($res);
+                            }
+                            else
+                            {
+                                $out .= build_log_html($log);
+                            }
                         }
+                    }
+                    else
+                    {
+                        update_by_packetid($area,$sn,$res,$data["returnCode"]);
+                        $out .= build_log_html($res);
                     }
                 }
                 else
