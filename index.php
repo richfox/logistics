@@ -590,15 +590,20 @@ function get_logis_inter_logs($cnLogs)
         $logs[$k] = array();
         if ($k == "r")
         {
+            $ids = array();
             foreach ($cnLogs[$k] as $cnlog)
             {
                 $id = $cnlog[0]["railway_id"];
-                $sql = "SELECT * FROM zws_test_railway_inter WHERE id = '$id'";
-                $result= mysqli_query($connect,$sql);
-                //$logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
-                while ($row = $result->fetch_assoc())
+                if (!in_array($id,$ids))
                 {
-                    $logs[$k][] = $row;
+                    $ids[] = $id;
+                    $sql = "SELECT * FROM zws_test_railway_inter WHERE id = '$id'";
+                    $result= mysqli_query($connect,$sql);
+                    //$logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                    while ($row = $result->fetch_assoc())
+                    {
+                        $logs[$k][] = $row;
+                    }
                 }
             }
         }
@@ -618,15 +623,20 @@ function get_logis_de_logs($cnLogs)
         $logs[$k] = array();
         if ($k == "r")
         {
+            $ids = array();
             foreach ($cnLogs[$k] as $cnlog)
             {
                 $id = $cnlog[0]["railway_id"];
-                $sql = "SELECT * FROM zws_test_logis_de WHERE railway_id = '$id'";
-                $result= mysqli_query($connect,$sql);
-                //$logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
-                while ($row = $result->fetch_assoc())
+                if (!in_array($id,$ids))
                 {
-                    $logs[$k][] = $row;
+                    $ids[] = $id;
+                    $sql = "SELECT * FROM zws_test_logis_de WHERE railway_id = '$id'";
+                    $result= mysqli_query($connect,$sql);
+                    //$logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
+                    while ($row = $result->fetch_assoc())
+                    {
+                        $logs[$k][] = $row;
+                    }
                 }
             }
         }
