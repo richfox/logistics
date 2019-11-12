@@ -1,5 +1,7 @@
 <?php
 
+error_reporting(0);
+
 session_start();
 
 
@@ -31,22 +33,29 @@ $finishStatus = array(3, 4, 7, 99);
 $transports = array("s"=>"ship","r"=>"railway","a"=>"airline");
 $logisAreas = array("c"=>"cn","i"=>"inter","d"=>"de");
 $logisCompanys = array("顺丰"=>"shunfeng",
-                 "申通"=>"shentong",
-                 "圆通"=>"yuantong",
-                 "中通"=>"zhongtong",
-                 "百世"=>"huitongkuaidi",
-                 "韵达"=>"yunda",
-                 "宅急送"=>"zhaijisong",
-                 "天天"=>"tiantian",
-                 "德邦"=>"debangwuliu",
-                 "速尔"=>"suer",
-                 "优速"=>"youshuwuliu",
-                 "京东"=>"jd",
-                 "品骏"=>"pjbest",
-                 "邮政"=>"youzhengguonei",
-                 "EMS"=>"ems",
-                 "DHL"=>"dhlen",
-                 "UPS"=>"ups");
+                        "申通"=>"shentong",
+                        "圆通"=>"yuantong",
+                        "中通"=>"zhongtong",
+                        "百世"=>"huitongkuaidi",
+                        "韵达"=>"yunda",
+                        "宅急送"=>"zhaijisong",
+                        "天天"=>"tiantian",
+                        "德邦"=>"debangwuliu",
+                        "速尔"=>"suer",
+                        "优速"=>"youshuwuliu",
+                        "京东"=>"jd",
+                        "品骏"=>"pjbest",
+                        "邮政"=>"youzhengguonei",
+                        "苏宁"=>"suning",
+                        "京广"=>"jinguangsudikuaijian",
+                        "丹鸟"=>"danniao",
+                        "南方传媒"=>"ndwl",
+                        "TNT"=>"tnt",
+                        "Bpost"=>"bpost",
+                        "FedEx"=>"fedex",
+                        "EMS"=>"ems",
+                        "DHL"=>"dhlen",
+                        "UPS"=>"ups");
 #######
 ## API 调用
 ########
@@ -709,16 +718,16 @@ switch($seite){
             else
             {
                 $logisDesc = get_logis_goods_desc($goodsId);
-                var_dump($logisDesc);
+                echo $logisDesc;
 
                 //解析logisDesc得到国内物流单号
                 $cnIds = get_logis_cn_ids($logisDesc);
-                var_dump($cnIds);
+                //var_dump($cnIds);
 
                 //zws_test_logis_cn表：通过国内物流单号查询国内段物流信息
                 //echo "国内段物流信息";
                 $cnLogs = get_logis_cn_logs($cnIds);
-                var_dump($cnLogs);
+                //var_dump($cnLogs);
                 foreach ($cnLogs as $k=>$v)
                 {
                     //目前只支持铁路物流查询
@@ -740,7 +749,7 @@ switch($seite){
                 //zws_test_railway_inter表：通过zws_test_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
                 //echo "国际段铁路物流信息";
                 $interLogs = get_logis_inter_logs($cnLogs);
-                var_dump($interLogs);
+                //var_dump($interLogs);
                 foreach ($interLogs as $k=>$v)
                 {
                     //目前只支持铁路物流查询
@@ -761,7 +770,7 @@ switch($seite){
                 //zws_test_logis_de表：通过zws_test_logis_cn表外键railway_id查询德国段ups物流信息
                 //echo "德国段物流信息";
                 $deLogs = get_logis_de_logs($cnLogs);
-                var_dump($deLogs);
+                //var_dump($deLogs);
                 foreach ($deLogs as $k=>$v)
                 {
                     //目前只支持铁路物流查询
