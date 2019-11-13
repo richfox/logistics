@@ -14,6 +14,15 @@ define('DB_USER', "root");
 define('DB_PASS', "");
 define('DB_PORT', '');
 
+//数据表名
+//define('TBL_INTER', 'zws_railway_inter');
+//define('TBL_CN', 'zws_logis_cn');
+//define('TBL_DE', 'zws_logis_de');
+define('TBL_INTER', 'zws_test_railway_inter');
+define('TBL_CN', 'zws_test_logis_cn');
+define('TBL_DE', 'zws_test_logis_de');
+
+//快递100
 define('CUSTOMER', '0439B34CF50E0CEE9C884D90E407A2DA');
 define('KEY', 'jGKCrWOG1586');
 
@@ -50,6 +59,7 @@ $logisCompanys = array("顺丰"=>"shunfeng",
                         "京广"=>"jinguangsudikuaijian",
                         "丹鸟"=>"danniao",
                         "南方传媒"=>"ndwl",
+                        "当当"=>"ndwl",
                         "TNT"=>"tnt",
                         "Bpost"=>"bpost",
                         "FedEx"=>"fedex",
@@ -229,7 +239,7 @@ $htmlOfFooter ='
 ###  数据库操作----开始
 ###########
 /**
- * zw_test_logis_cn表
+ * zws_logis_cn表
  *
  * @param int $goodsID, 物流订单
  * 
@@ -246,8 +256,9 @@ $htmlOfFooter ='
 function insertToCn($goodsId, $cnPacketId, $cnLog,  $cnStatus, $cnCompany ){
 
     global $connect;
-
-    $sql = "INSERT INTO zws_test_logis_cn (goods_id, cn_packet_id, cn_log, cn_status, cn_company)
+    
+    $table = TBL_CN;
+    $sql = "INSERT INTO $table (goods_id, cn_packet_id, cn_log, cn_status, cn_company)
             VALUES ('$goodsId', '$cnPacketId', '$cnLog', '$cnStatus', '$cnCompany')
             ";
 
@@ -261,7 +272,7 @@ function insertToCn($goodsId, $cnPacketId, $cnLog,  $cnStatus, $cnCompany ){
 }
 
 /**
- * zws_test_logis_cn 根据goods id 查询获得全部相关数据
+ * zws_logis_cn 根据goods id 查询获得全部相关数据
  * 
  * @param int $goodsId  物流商品号
  * 
@@ -269,7 +280,9 @@ function insertToCn($goodsId, $cnPacketId, $cnLog,  $cnStatus, $cnCompany ){
  */
 function getAllByGoodsid($goodsId){
     global $connect;
-    $sql = "SELECT * FROM zws_test_logis_cn WHERE goods_id = '$goodsId'";
+
+    $table = TBL_CN;
+    $sql = "SELECT * FROM $table WHERE goods_id = '$goodsId'";
 
     $result= mysqli_query($connect, $sql);
     $data = mysqli_fetch_all($result,  MYSQLI_ASSOC);
@@ -277,7 +290,7 @@ function getAllByGoodsid($goodsId){
 }
 
 /**
- * zw_test_logis_cn表
+ * zws_logis_cn表
  * @param String $cnPacketId 国内包裹号
  * 
  * @param String $cnLog JSON数据
@@ -287,7 +300,8 @@ function getAllByGoodsid($goodsId){
 function updateByPacketid($cnPacketId, $cnLog, $cnStatus)
 {
     global $connect;
-    $sql = "UPDATE zws_test_logis_cn SET cn_log ='$cnLog', cn_status = '$cnStatus' WHERE cn_packet_sn = '$cnPacketId'";
+    $table = TBL_CN;
+    $sql = "UPDATE $table SET cn_log ='$cnLog', cn_status = '$cnStatus' WHERE cn_packet_sn = '$cnPacketId'";
     $result = mysqli_query($connect, $sql);
 }
 
@@ -560,7 +574,8 @@ function get_logis_cn_logs($cnIds)
                     $sn = $matches[1];
                 }
 
-                $sql = "SELECT * FROM zws_test_logis_cn WHERE cn_packet_sn REGEXP '$sn'";
+                $table = TBL_CN;
+                $sql = "SELECT * FROM $table WHERE cn_packet_sn REGEXP '$sn'";
                 $result= mysqli_query($connect,$sql);
                 if ($result->num_rows > 0)
                 {
@@ -606,7 +621,8 @@ function get_logis_inter_logs($cnLogs)
                 if (!in_array($id,$ids))
                 {
                     $ids[] = $id;
-                    $sql = "SELECT * FROM zws_test_railway_inter WHERE id = '$id'";
+                    $table = TBL_INTER;
+                    $sql = "SELECT * FROM $table WHERE id = '$id'";
                     $result= mysqli_query($connect,$sql);
                     //$logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
                     while ($row = $result->fetch_assoc())
@@ -639,7 +655,8 @@ function get_logis_de_logs($cnLogs)
                 if (!in_array($id,$ids))
                 {
                     $ids[] = $id;
-                    $sql = "SELECT * FROM zws_test_logis_de WHERE railway_id = '$id'";
+                    $table = TBL_DE;
+                    $sql = "SELECT * FROM $table WHERE railway_id = '$id'";
                     $result= mysqli_query($connect,$sql);
                     //$logs[$k][] = mysqli_fetch_all($result,MYSQLI_ASSOC);
                     while ($row = $result->fetch_assoc())
