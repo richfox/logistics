@@ -15,12 +15,20 @@ define('DB_PASS', "");
 define('DB_PORT', '');
 
 //数据表名
-//define('TBL_INTER', 'zws_railway_inter');
-//define('TBL_CN', 'zws_logis_cn');
-//define('TBL_DE', 'zws_logis_de');
-define('TBL_INTER', 'zws_test_railway_inter');
-define('TBL_CN', 'zws_test_logis_cn');
-define('TBL_DE', 'zws_test_logis_de');
+define('TBL_INTER', 'zws_railway_inter');
+define('TBL_CN', 'zws_logis_cn');
+define('TBL_DE', 'zws_logis_de');
+define('TBL_','zws_logis_');
+define('TBL_ORDER_INFO','ecs_order_info');
+define('TBL_ORDER_GOOD','ecs_order_goods');
+define('TBL_GOOD','ecs_goods');
+//define('TBL_INTER', 'zws_test_railway_inter');
+//define('TBL_CN', 'zws_test_logis_cn');
+//define('TBL_DE', 'zws_test_logis_de');
+//define('TBL_','zws_test_logis_');
+//define('TBL_ORDER_INFO','ecs_test_order_info');
+//define('TBL_ORDER_GOOD','ecs_test_order_goods');
+//define('TBL_GOOD','ecs_test_goods');
 
 //快递100
 define('CUSTOMER', '0439B34CF50E0CEE9C884D90E407A2DA');
@@ -176,8 +184,8 @@ $htmlOfHeader='
 <body>
     
     <div align="center">
-        <a href="?seite=home">订单情况查看</a>
-        <a href="?seite=input">添加新物流订单</a>
+        <a href="?seite=home">物流订单查询Beta版</a>
+        <a href="?seite=input" style="display:none;">添加新物流订单</a>
     </div>
     <br>
     <br>
@@ -320,7 +328,7 @@ function update_by_packetid($area,$sn,$log,$status)
     global $connect;
     global $logisAreas;
 
-    $tablename = "zws_test_logis_";
+    $tablename = TBL_;
     $fieldnames = array("_log","_status","_packet_sn");
     foreach ($logisAreas as $k=>$v)
     {
@@ -469,14 +477,16 @@ function get_logis_goods_id($sn)
 
     $logisGoodsId = 0;
 
-    //ecs_test_order_info表根据订单号查询订单id
-    $sql = "SELECT * FROM ecs_test_order_info WHERE order_sn = '$orderSn'";
+    //ecs_order_info表根据订单号查询订单id
+    $tbloinfo = TBL_ORDER_INFO;
+    $sql = "SELECT * FROM $tbloinfo WHERE order_sn = '$orderSn'";
     $result = mysqli_query($connect, $sql);
     $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
     $orderId = $row["order_id"];
 
-    //ecs_test_order_goods表根据订单id查询订单下所有商品id
-    $sql = "SELECT * FROM ecs_test_order_goods WHERE order_id = '$orderId'";
+    //ecs_order_goods表根据订单id查询订单下所有商品id
+    $tblogood = TBL_ORDER_GOOD;
+    $sql = "SELECT * FROM $tblogood WHERE order_id = '$orderId'";
     $result = mysqli_query($connect, $sql);
     //$orderGoods = mysqli_fetch_all($result,MYSQLI_ASSOC);
     $orderGoods = array();
@@ -496,8 +506,9 @@ function get_logis_goods_id($sn)
         $found = false; //找到物流商品吗
         for ($i=0; $i<count($goodsIds); $i++)
         {
-            //ecs_test_goods表根据商品id查询分类id
-            $sql = "SELECT * FROM ecs_test_goods WHERE goods_id = '$goodsIds[$i]'";
+            //ecs_goods表根据商品id查询分类id
+            $tblgood = TBL_GOOD;
+            $sql = "SELECT * FROM $tblgood WHERE goods_id = '$goodsIds[$i]'";
             $result = mysqli_query($connect, $sql);
             $goods = mysqli_fetch_array($result,MYSQLI_ASSOC);
             $catId = $goods["cat_id"];
@@ -519,11 +530,12 @@ function get_logis_goods_id($sn)
 }
 
 
-//ecs_test_goods表根据物流商品Id得到物流商品描述
+//ecs_goods表根据物流商品Id得到物流商品描述
 function get_logis_goods_desc($goodsId)
 {
     global $connect;
-    $sql = "SELECT * FROM ecs_test_goods WHERE goods_id = '$goodsId'";
+    $tblgood = TBL_GOOD;
+    $sql = "SELECT * FROM $tblgood WHERE goods_id = '$goodsId'";
     $result = mysqli_query($connect, $sql);
     $row = mysqli_fetch_array($result,MYSQLI_ASSOC);
     $logisGoodsDesc = $row["goods_desc"];
@@ -741,7 +753,7 @@ switch($seite){
                 $cnIds = get_logis_cn_ids($logisDesc);
                 //var_dump($cnIds);
 
-                //zws_test_logis_cn表：通过国内物流单号查询国内段物流信息
+                //zws_logis_cn表：通过国内物流单号查询国内段物流信息
                 //echo "国内段物流信息";
                 $cnLogs = get_logis_cn_logs($cnIds);
                 //var_dump($cnLogs);
@@ -763,7 +775,7 @@ switch($seite){
                     }
                 }
 
-                //zws_test_railway_inter表：通过zws_test_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
+                //zws_railway_inter表：通过zws_logis_cn表外键railway_id查询国际段铁路物流信息（暂时没有）
                 //echo "国际段铁路物流信息";
                 $interLogs = get_logis_inter_logs($cnLogs);
                 //var_dump($interLogs);
@@ -776,6 +788,10 @@ switch($seite){
                         foreach ($v as $railway)
                         {
                             $log = $railway["inter_log"];
+                            if ($log == '')
+                            {
+                                $log = '火车在跑。。。';
+                            }
                             $sn = $railway["railway_sn"];
                             $out .= "<p>".$sn."</p>";
                             $out .= "<li>".$log."</li>";
@@ -784,7 +800,7 @@ switch($seite){
                     }
                 }
 
-                //zws_test_logis_de表：通过zws_test_logis_cn表外键railway_id查询德国段ups物流信息
+                //zws_logis_de表：通过zws_logis_cn表外键railway_id查询德国段ups物流信息
                 //echo "德国段物流信息";
                 $deLogs = get_logis_de_logs($cnLogs);
                 //var_dump($deLogs);
